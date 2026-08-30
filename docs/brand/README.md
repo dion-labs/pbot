@@ -6,7 +6,7 @@ The pbot identity is an original pocket utility robot: clever, slightly mischiev
 
 - `pbot-mascot.png`: transparent full-character master, 1254 × 1254.
 - `pbot-icon-master.png`: transparent head-and-antenna icon master, 1254 × 1254.
-- `pbot-social-preview.png`: 2:1 repository and README hero, 1280 × 640.
+- `pbot-social-preview.jpg`: 2:1 repository and README hero, 1280 × 640, optimized for GitHub's upload limit.
 - `public/icons/pbot-512.png` and `public/icons/pbot-192.png`: dashboard icon exports.
 - `public/favicon.png`: compact 32 × 32 dashboard favicon.
 

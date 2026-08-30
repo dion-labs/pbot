@@ -6,7 +6,7 @@
 [![Local only](https://img.shields.io/badge/control-localhost-e04b3f.svg)](SECURITY.md)
 [![Sponsor Dion Labs](https://img.shields.io/badge/sponsor-dion--labs-ea4aaa.svg)](https://github.com/sponsors/dion-labs)
 
-![pbot — Pocket Bot. Local Android automation with durable progress.](docs/brand/pbot-social-preview.png)
+![pbot — Pocket Bot. Local Android automation with durable progress.](docs/brand/pbot-social-preview.jpg)
 
 pbot is an experimental local automation workbench for Pokémon TCG Pocket Step-Up Battles. It observes the game through screenshots and OCR, controls an authorized Android device with human-like ADB input, records progress in SQLite, and exposes a local dashboard for setup, live progress, and intervention.
 
