@@ -2,6 +2,25 @@
   "name": "pocket-bot",
   "version": "0.1.0",
   "private": true,
+  "description": "Experimental local Android automation workbench with durable progress and guarded, owned-only actions",
+  "author": "Dion Labs",
+  "license": "MIT",
+  "homepage": "https://github.com/dion-labs/pbot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dion-labs/pbot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dion-labs/pbot/issues"
+  },
+  "keywords": [
+    "android",
+    "automation",
+    "local-first",
+    "computer-vision",
+    "adb",
+    "experimental"
+  ],
   "engines": {
     "node": ">=22.13.0"
   },
@@ -21,7 +40,6 @@
     "@cloudflare/vite-plugin": "1.54.1",
     "@eslint/js": "9.39.4",
     "@next/eslint-plugin-next": "16.2.6",
-    "@openai/sites-vite-plugin": "0.1.0",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

@@ -1,11 +1,21 @@
 # pbot — Pocket Bot
 
+[![CI](https://github.com/dion-labs/pbot/actions/workflows/ci.yml/badge.svg)](https://github.com/dion-labs/pbot/actions/workflows/ci.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-31836b.svg)](LICENSE)
+[![Experimental](https://img.shields.io/badge/status-experimental-eabf45.svg)](#project-status)
+[![Local only](https://img.shields.io/badge/control-localhost-e04b3f.svg)](SECURITY.md)
+[![Sponsor Dion Labs](https://img.shields.io/badge/sponsor-dion--labs-ea4aaa.svg)](https://github.com/sponsors/dion-labs)
+
+![pbot — Pocket Bot. Local Android automation with durable progress.](docs/brand/pbot-social-preview.png)
+
 pbot is an experimental local automation workbench for Pokémon TCG Pocket Step-Up Battles. It observes the game through screenshots and OCR, controls an authorized Android device with human-like ADB input, records progress in SQLite, and exposes a local dashboard for setup, live progress, and intervention.
 
-It was built for one real account and one reference device as a Dionlabs example of agent-built personal software. It is useful, inspectable, and tested on that setup; it is not a universal or turnkey bot. If your hardware, screen layout, collection, or game version differs, expect to adapt it—ideally with a coding agent and the included [porting guide](docs/AGENT_PORTING.md).
+It was built for one real account and one reference device as a DionLabs example of agent-built personal software. It is useful, inspectable, and tested on that setup; it is not a universal or turnkey bot. If your hardware, screen layout, collection, or game version differs, expect to adapt it—ideally with a coding agent and the included [porting guide](docs/AGENT_PORTING.md).
 
 > [!IMPORTANT]
 > pbot is an unofficial fan project and is not affiliated with, endorsed by, or sponsored by The Pokémon Company, Creatures Inc., DeNA, Nintendo, or their affiliates. Pokémon and related marks belong to their respective owners. Automation may violate a game's rules or terms and may put an account at risk. Review the applicable rules and use pbot only on accounts and devices you control, at your own risk.
+
+There is no hosted demo or public control plane. The unauthenticated dashboard and API are intentionally loopback-only and must not be exposed to a LAN or the internet.
 
 ## What it does
 
@@ -124,6 +134,8 @@ npm test
 
 ## Project status
 
-pbot is experimental software under active development. Its reference workflow is real, durable, and guarded, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
+pbot is experimental software under active development. Version `0.1.0` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
 
-Released under the [MIT License](LICENSE).
+See the [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), [security policy](SECURITY.md), and [brand assets](docs/brand/README.md). Questions about adapting a device or layout should begin with the [agent-assisted porting guide](docs/AGENT_PORTING.md).
+
+Released under the [MIT License](LICENSE). If pbot is useful to your own experiments, you can [sponsor Dion Labs](https://github.com/sponsors/dion-labs).

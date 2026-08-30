@@ -147,7 +147,7 @@ export function Dashboard() {
   return (
     <main className="shell">
       <header className="topbar">
-        <div className="brand"><span className="brandMark">PB</span><div><p className="eyebrow">POCKET BOT</p><h1>Control room</h1></div></div>
+        <div className="brand"><span className="brandMark" aria-hidden="true"><img src="/icons/pbot-192.png" alt="" /></span><div><p className="eyebrow">POCKET BOT</p><h1>Control room</h1></div></div>
         <div className={`runState ${connected ? "connected" : ""}`}><span /> {status}</div>
       </header>
 

@@ -7,7 +7,8 @@ button { font:inherit; }
 .shell { width:min(1440px,100%); margin:auto; min-height:100vh; padding:28px 34px 20px; }
 .topbar { display:flex; justify-content:space-between; align-items:center; padding-bottom:24px; border-bottom:1px solid var(--line); }
 .brand { display:flex; align-items:center; gap:13px; }
-.brandMark { display:grid; place-items:center; width:43px; height:43px; border-radius:13px; background:var(--red); color:white; font-weight:850; letter-spacing:-1px; box-shadow:inset 0 -3px 0 rgba(0,0,0,.14); }
+.brandMark { display:grid; place-items:center; width:43px; height:43px; overflow:hidden; border-radius:13px; background:#11181d; box-shadow:inset 0 -3px 0 rgba(0,0,0,.14),0 0 0 1px rgba(24,32,38,.12); }
+.brandMark img { width:43px; height:43px; object-fit:cover; }
 h1,h2,h3,p { margin:0; }
 h1 { font-size:18px; line-height:1.1; letter-spacing:-.4px; }
 .eyebrow { color:var(--muted); font:700 10px/1.5 var(--font-geist-mono),monospace; letter-spacing:1.7px; }

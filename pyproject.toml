@@ -1,7 +1,7 @@
 [project]
 name = "pocket-bot"
 version = "0.1.0"
-description = "Local, recoverable automation harness for Pokemon TCG Pocket"
+description = "Experimental local Android automation workbench with durable progress and guarded, owned-only actions"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -10,6 +10,12 @@ dependencies = [
   "pillow>=11,<13",
   "uvicorn[standard]>=0.35,<1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/dion-labs/pbot"
+Repository = "https://github.com/dion-labs/pbot.git"
+Issues = "https://github.com/dion-labs/pbot/issues"
+Changelog = "https://github.com/dion-labs/pbot/blob/main/CHANGELOG.md"
 
 [project.scripts]
 pbot = "pbot.cli:main"

@@ -17,7 +17,7 @@ test("server-renders the pbot control room", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
-  assert.match(html, /<title>pbot control room<\/title>/i);
+  assert.match(html, /<title>pbot — Pocket Bot control room<\/title>/i);
   assert.match(html, /Control room/);
   assert.match(html, /Connect an Android device/);
   assert.match(html, /Scan account first/);

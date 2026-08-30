@@ -6,8 +6,12 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "pbot control room",
-  description: "Local control and progress tracking for Pocket Bot.",
+  title: "pbot — Pocket Bot control room",
+  description: "Local Android automation and durable progress tracking for Pocket Bot.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/icons/pbot-192.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
