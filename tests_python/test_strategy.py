@@ -91,6 +91,79 @@ def test_resolver_selects_an_untried_owned_counter_and_avoids_blind_retry(tmp_pa
     assert StrategyResolver(store).resolve("test:advanced:frontier") is None
 
 
+def test_resolver_uses_a_proven_owned_fallback_after_type_counters_fail(tmp_path: Path) -> None:
+    store = Store(tmp_path / "pbot.sqlite3")
+    store.initialize()
+    register_vaporcuno(store)
+    store.register_owned_deck(
+        "pbotfight",
+        "pbotfight",
+        ["Fighting"],
+        verified=True,
+        managed=True,
+        slot_number=19,
+        source="test_account_scan",
+    )
+    battle_id = "test:advanced:frontier"
+    import_frontier(store, battle_id)
+    store.resolve_battle_work(battle_id, "deferred", "first pass lost")
+    store.record_battle_recommendation(
+        battle_id,
+        None,
+        "Water",
+        "Mega Sharpedo ex Deck (Ruler of the Skies)",
+        "Water recommendation",
+        0.98,
+        "recommendation.png",
+    )
+    failed = store.start_attempt(
+        battle_id, "Test", "Advanced", "Frontier ex Deck (Test)", "vaporcuno", "auto"
+    )
+    store.finish_attempt(failed, "loss", "loss.png")
+
+    proof_id = "test:advanced:proof"
+    import_frontier(store, proof_id)
+    proof = store.start_attempt(
+        proof_id, "Test", "Advanced", "Proof ex Deck (Test)", "pbotfight", "auto"
+    )
+    store.finish_attempt(proof, "win", "victory.png")
+
+    decision = StrategyResolver(store).resolve(battle_id)
+
+    assert decision is not None
+    assert decision.deck_name == "pbotfight"
+    assert decision.recommended_type == "Water"
+    assert decision.prior_attempts == 0
+    assert "Empirically proven owned-deck fallback" in decision.reason
+
+
+def test_resolver_does_not_treat_an_unproven_off_type_deck_as_researched(tmp_path: Path) -> None:
+    store = Store(tmp_path / "pbot.sqlite3")
+    store.initialize()
+    store.register_owned_deck(
+        "unknown-fire",
+        None,
+        ["Fire"],
+        verified=True,
+        managed=False,
+        slot_number=2,
+        source="test_account_scan",
+    )
+    import_frontier(store)
+    store.resolve_battle_work("test:advanced:frontier", "deferred", "first pass lost")
+    store.record_battle_recommendation(
+        "test:advanced:frontier",
+        None,
+        "Water",
+        None,
+        "Water recommendation",
+        0.86,
+        "recommendation.png",
+    )
+
+    assert StrategyResolver(store).resolve("test:advanced:frontier") is None
+
+
 def test_resolver_can_use_a_new_verified_managed_water_deck(tmp_path: Path) -> None:
     store = Store(tmp_path / "pbot.sqlite3")
     store.initialize()

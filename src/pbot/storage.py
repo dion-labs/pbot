@@ -908,6 +908,20 @@ class Store:
             ).fetchone()
         return {key: int(row[key]) for key in ("attempts", "wins", "losses", "ties")}
 
+    def deck_performance_summary(self, deck_name: str) -> dict[str, int]:
+        """Return durable completed auto-battle evidence for one owned deck."""
+        with self.connect() as connection:
+            row = connection.execute(
+                """SELECT COUNT(*) attempts,
+                          COALESCE(SUM(result = 'win'), 0) wins,
+                          COALESCE(SUM(result = 'loss'), 0) losses,
+                          COALESCE(SUM(result = 'tie'), 0) ties
+                   FROM attempts WHERE lower(deck_name) = lower(?)
+                     AND result IN ('win', 'loss', 'tie')""",
+                (deck_name,),
+            ).fetchone()
+        return {key: int(row[key]) for key in ("attempts", "wins", "losses", "ties")}
+
     def latest_recoverable_attempt(
         self,
         battle_id: str,

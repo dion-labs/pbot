@@ -49,7 +49,7 @@ __pycache__/
 *.py[cod]
 
 # pbot local runtime data
-/var/
+/var
 /JOURNAL.md
 /DIONLABS_HANDOFF.md
 /docs/SHARING_READINESS.md

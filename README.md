@@ -21,7 +21,7 @@ There is no hosted demo or public control plane. The unauthenticated dashboard a
 
 - Discovers incomplete Step-Up Battle frontiers and persists the result.
 - Runs guarded auto battles with owned decks and records wins, missions, losses, ties, recommendations, and evidence.
-- Chooses verified owned counters, then optionally builds a known recipe in a guarded pbot-managed slot.
+- Chooses verified owned counters, falls back to untried decks with proven local auto-battle wins, then optionally builds a known recipe in a guarded pbot-managed slot.
 - Recovers from restarts and USB disconnects at durable checkpoints.
 - Stops with `needs_attention` and evidence when it cannot choose a policy-safe action.
 - Shows run state, progress, events, queue state, and a live device view in a local dashboard.

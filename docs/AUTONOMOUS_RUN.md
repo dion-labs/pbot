@@ -183,6 +183,7 @@ On every loss:
    - a locally verified auto-win for this exact battle;
    - a repository strategy with a recipe the account can build;
    - an existing owned deck matching the recommended type/capabilities;
+   - an untried verified owned deck ranked by this account's durable auto-battle win evidence;
    - a known recipe with deterministic owned-card substitutions;
    - an optional research-provider proposal.
 3. Validate ownership and policy before selecting or editing a deck.
@@ -285,7 +286,7 @@ That slice would have handled Mega Mawile automatically: capture Fire/Typhlosion
 - Added durable `battle_recommendations`, `deck_recipes`, `owned_decks`, `run_objectives`, and `run_checkpoints` storage.
 - Removed account-specific owned-deck seeding. Clean databases contain reusable recipes only; a completed read-only device scan is now the authority for locally available decks.
 - The result lifecycle now parses and persists recommendation type, named theme deck, confidence, OCR text, attempt, and screenshot evidence.
-- Added a deterministic resolver that selects an untried verified owned deck of the recommended type, preferring an exact theme-reference match and refusing blind repeat attempts.
+- Added a deterministic resolver that selects an untried verified owned deck of the recommended type, preferring an exact theme-reference match and refusing blind repeat attempts. If those counters are exhausted, it now ranks untried owned decks with prior local wins using a smoothed empirical score; decks with no win evidence are not treated as researched fallbacks.
 - Added a targeted autonomous first-win loop, detached managed execution, `completed`/`needs_attention` semantics, API Run/Stop endpoints, and the dashboard **Run pbot** control.
 - Backfilled Mega Kangaskhan's Water / Mega Sharpedo recommendation from saved evidence. Because `vaporcuno` has now already lost that retry, the resolver correctly reports that a new Water strategy is required instead of looping.
 - Added the first complete portable recipe: the exact 20-card tournament-derived Mega Sharpedo ex / Milotic ex list, including stable set/card IDs and provenance.

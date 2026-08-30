@@ -156,19 +156,60 @@ class StrategyResolver:
             managed = int(bool(deck.get("managed")))
             candidates.append(((-named_match, -managed, name.casefold()), deck, attempts))
 
-        if not candidates:
+        if candidates:
+            _, deck, attempts = sorted(candidates, key=lambda item: item[0])[0]
+            deck_name = str(deck["display_name"])
+            reason = f"Owned {recommended_type} counter selected from structured recommendation"
+            if named_deck and normalize_game_label(str(deck.get("recipe_source_ref") or "")) == normalize_game_label(named_deck):
+                reason = f"Owned deck matches recommended recipe {named_deck}"
+            return StrategyDecision(
+                battle_id=battle_id,
+                deck_name=deck_name,
+                recommended_type=recommended_type,
+                recommended_deck_name=named_deck,
+                reason=reason,
+                prior_attempts=attempts["attempts"],
+            )
+
+        # Once every weakness-matched deck has been tried, reuse this account's
+        # own successful auto-battle evidence before requiring outside research.
+        # Laplace smoothing keeps a single lucky win below a consistently strong
+        # deck, and decks with no observed wins are never treated as researched.
+        fallbacks: list[
+            tuple[tuple[float, int, int, str], dict[str, object], dict[str, int], dict[str, int]]
+        ] = []
+        for deck in self.store.owned_decks():
+            name = str(deck["display_name"])
+            attempts = self.store.deck_attempt_summary(battle_id, name)
+            if attempts["wins"] or attempts["attempts"] >= self.max_attempts_per_deck:
+                continue
+            performance = self.store.deck_performance_summary(name)
+            if performance["wins"] < 1:
+                continue
+            smoothed_win_rate = (performance["wins"] + 1) / (performance["attempts"] + 2)
+            managed = int(bool(deck.get("managed")))
+            fallbacks.append(
+                (
+                    (-smoothed_win_rate, -performance["wins"], -managed, name.casefold()),
+                    deck,
+                    attempts,
+                    performance,
+                )
+            )
+
+        if not fallbacks:
             return None
-        _, deck, attempts = sorted(candidates, key=lambda item: item[0])[0]
+        _, deck, attempts, performance = sorted(fallbacks, key=lambda item: item[0])[0]
         deck_name = str(deck["display_name"])
-        reason = f"Owned {recommended_type} counter selected from structured recommendation"
-        if named_deck and normalize_game_label(str(deck.get("recipe_source_ref") or "")) == normalize_game_label(named_deck):
-            reason = f"Owned deck matches recommended recipe {named_deck}"
         return StrategyDecision(
             battle_id=battle_id,
             deck_name=deck_name,
             recommended_type=recommended_type,
             recommended_deck_name=named_deck,
-            reason=reason,
+            reason=(
+                "Empirically proven owned-deck fallback selected after recommended-type "
+                f"counters were exhausted ({performance['wins']}/{performance['attempts']} wins)"
+            ),
             prior_attempts=attempts["attempts"],
         )
 

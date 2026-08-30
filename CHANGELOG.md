@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Reuse durable account-local win evidence to rank untried owned decks after every weakness-matched counter has failed, while preserving the one-attempt-per-deck and no-spend guards.
+- Ignore both runtime directories and local runtime symlinks so an operational checkout can safely reference retained evidence.
+
 ## 0.1.0 — 2026-08-30
 
 First experimental public release.
