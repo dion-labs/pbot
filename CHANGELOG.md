@@ -4,6 +4,7 @@
 
 - Reuse durable account-local win evidence to rank untried owned decks after every weakness-matched counter has failed, while preserving the one-attempt-per-deck and no-spend guards.
 - Ignore both runtime directories and local runtime symlinks so an operational checkout can safely reference retained evidence.
+- Tap a visible owned-deck name inside the actionable card body instead of its decorative slot-number header; Battle Rules read-back continues to block mismatches.
 
 ## 0.1.0 — 2026-08-30
 

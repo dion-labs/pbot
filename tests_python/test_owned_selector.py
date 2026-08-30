@@ -144,7 +144,7 @@ class FakeLongNameUpperRightSelector:
         raise AssertionError("visible requested deck should not require a swipe")
 
 
-def test_visible_long_name_uses_its_slot_number_as_the_row_anchor() -> None:
+def test_ambiguous_long_name_uses_its_slot_number_fallback() -> None:
     match = find_owned_deck(
         FakeLongNameUpperRightSelector(),
         "mega blaziken and ente",
@@ -153,3 +153,27 @@ def test_visible_long_name_uses_its_slot_number_as_the_row_anchor() -> None:
 
     assert match is not None
     assert owned_deck_tap(match.x, match.center_y) == (810, 1022)
+
+
+class FakeVisibleBottomManagedDeckSelector:
+    def frame(self, _label: str) -> tuple[Path, list[OcrLine]]:
+        return Path("selector.png"), [
+            OcrLine("Battle Rules", 1, 194, 194, 190, 31),
+            OcrLine("Select a Deck", 1, 346, 412, 391, 51),
+            OcrLine("19", 1, 78, 1360, 153, 105),
+            OcrLine("20", 1, 577, 1354, 170, 116),
+            OcrLine("pbotfight", 1, 200, 1884, 166, 44),
+            OcrLine("pbotdark", 1, 717, 1884, 163, 41),
+            OcrLine("My Decks", 1, 211, 2051, 163, 41),
+            OcrLine("Rental Decks", 1, 679, 2051, 214, 34),
+        ]
+
+    def swipe(self, *_args: object) -> None:
+        raise AssertionError("visible requested deck should not require a swipe")
+
+
+def test_visible_bottom_managed_deck_taps_card_body_not_slot_header() -> None:
+    match = find_owned_deck(FakeVisibleBottomManagedDeckSelector(), "pbotfight", 19)
+
+    assert match is not None
+    assert owned_deck_tap(match.x, match.center_y) == (270, 1850)

@@ -111,30 +111,11 @@ def find_owned_deck(
                 raise RuntimeError(f"Owned deck selector closed unexpectedly; saw:\n{text}")
             match = matching_owned_deck_line(lines, deck_name)
             if match:
-                if slot_number is not None:
-                    slot = next(
-                        (
-                            line
-                            for line in lines
-                            if normalize_game_label(line.text) == str(slot_number)
-                            and 350 <= line.center_y <= 1950
-                        ),
-                        None,
-                    )
-                    if slot:
-                        # Long names sit at the bottom of their card and can
-                        # cross the generic row threshold even while the card
-                        # itself is in the upper visible row. The durable slot
-                        # number is a safer card-position anchor; Battle Rules
-                        # still verifies the selected name before play.
-                        return OcrLine(
-                            match.text,
-                            match.confidence,
-                            slot.x + slot.width // 2,
-                            slot.y,
-                            slot.width,
-                            slot.height,
-                        )
+                # A visible name is inside the requested card's actionable
+                # body. Tapping its observed row is safer than the large slot
+                # number in the decorative header, which does not always
+                # change selection. The bounded tap still keeps labels partly
+                # under the fixed tab bar inside the card.
                 return match
             if slot_number is not None:
                 slot = next(
