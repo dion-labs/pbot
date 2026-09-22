@@ -145,4 +145,3 @@ pbot is experimental software under active development. Version `0.1.5` document
 See the [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), [security policy](SECURITY.md), and [brand assets](docs/brand/README.md). Questions about adapting a device or layout should begin with the [agent-assisted porting guide](docs/AGENT_PORTING.md).
 
 Released under the [MIT License](LICENSE). If pbot is useful to your own experiments, you can [sponsor Dion Labs](https://github.com/sponsors/dion-labs).
-
