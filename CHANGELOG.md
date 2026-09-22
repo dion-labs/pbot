@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 — 2026-09-22
+
+- Derive Python package and API version reporting from installed distribution metadata, replacing a stale 0.1.0 constant and preventing future drift between those reports.
+
 ## 0.1.2 — 2026-09-22
 
 - Update the development/build dependency graph to patched pytest, sharp, Browserslist, baseline-browser-mapping and fflate releases. Cloudflare build tooling moves to compatible pinned versions that include patched sharp.

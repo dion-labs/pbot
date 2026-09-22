@@ -80,3 +80,9 @@ Remaining acceptance is exactly the physical/browser/process-tree list above, no
 Final v0.1.1 push exposed four GitHub dependency alerts. Queried exact manifests/advisories: pytest <9.0.3, sharp <0.35.4, baseline-browser-mapping <2.11.0, Browserslist <=4.28.6. Full npm audit additionally found fflate <0.7.5. Updated pytest to 9.1.1; pinned @cloudflare/vite-plugin 1.57.1 and wrangler 4.136.1 to obtain sharp 0.35.4; resolved Browserslist 4.29.0, baseline-browser-mapping 2.11.25 and fflate 0.7.5. No forced overrides or application-policy changes.
 
 `npm audit --json`: zero known vulnerabilities. `uv export --frozen --no-hashes --no-emit-project` plus `uvx pip-audit -r <export> --no-deps --disable-pip --format json`: no known vulnerabilities (audits are time-sensitive). Resource-wrapped full build/render/149 Python suite passed with patched graph. Logs: `/tmp/pbot-dependency-suite.log`, `/tmp/pbot-npm-audit.json`, `/tmp/pbot-python-audit.json`. Added PB-046 and preparing v0.1.2 exact artifact; v0.1.1 remains published and unchanged.
+
+## v0.1.2 published and metadata follow-up
+
+Published v0.1.2 at code 94e5daa66748a37b18f44a2883eb41f39979941c. Clean archive lint/build/render/149 tests and npm audit passed; Python audit remained clean. Downloaded source SHA256 `5cc2503d2437e601eae1626f18d4297d30eb307e918ebfecf963972b5efa874d` matches validated bytes. Exact-head GitHub CI 35697596692 passed, and GitHub open Dependabot alerts are now empty. Site worker notified.
+
+Final consistency check caught preexisting `pbot.__version__ = "0.1.0"` despite current package/API metadata. v0.1.3 will derive Python and API reporting from installed distribution metadata (uninstalled source reports `0+unknown`) so the values cannot drift independently. Existing published releases remain unchanged; this is a version-reporting correction, no gameplay/control-policy change.

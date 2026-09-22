@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
+from . import __version__
 from .config import Settings, _loopback_host
 from .device import AdbDeviceAdapter, DeviceError
 from .engine import Harness
@@ -53,7 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     harness.initialize()
     controller = ManagedQueueController(settings.project_root, settings.database_path, settings.data_dir)
 
-    app = FastAPI(title="pbot control API", version="0.1.2")
+    app = FastAPI(title="pbot control API", version=__version__)
     app.state.harness = harness
     dashboard_origins = ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
     app.add_middleware(

@@ -1,6 +1,6 @@
 {
   "name": "pocket-bot",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "Experimental local Android automation workbench with durable progress and guarded, owned-only actions",
   "author": "Dion Labs",
