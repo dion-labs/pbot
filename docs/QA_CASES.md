@@ -19,7 +19,7 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 | PB-009 | Restart after persisted attempt before result commit | Interrupted state remains inspectable; no false win or replay | test_storage/managed_job |
 | PB-010 | Encounter unknown screen, dialog or purchase offer | No guessed tap or spend; stop with bounded diagnostic evidence | test_executor/discovery_navigation |
 | PB-011 | Choose rental versus owned strategy under safety policy | Only allowed existing owned strategy selected | test_rental_selector/strategy |
-| PB-012 | Run mobile UI while automation status changes | Controls remain readable and job status accurate | rendered HTML; manual desktop/mobile browser |
+| PB-012 | Run mobile UI while automation status changes | Controls remain readable and job status accurate | [Isolated Chrome harness](BROWSER_ACCEPTANCE.md), PB-012.01–09 and PB-041.01–04; physical mobile remains separate |
 | PB-013 | Inspect exported diagnostics/source release archive | No account database, screenshot, device serial or credentials exposed | Manual packaging review; synthetic fixtures only |
 | PB-014 | Database integrity and progress reconciliation on copied fixture | No duplicated missions/wins; transactions retain stable records | test_storage/recommendation_backfill |
 | PB-015 | Clean shutdown of isolated worker/API | Claims released or recoverable; unrelated runtime untouched | test_queue_worker; manual isolated process |
@@ -44,17 +44,17 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 | PB-028 | P0 error | Wrong variant, missing card or insufficient copies | Constructor rejects; no spend or substitution outside recipe | test_deck_recipe.py, test_card_inventory.py, test_managed_deck.py |
 | PB-029 | P0 recovery | Managed deck slot already exists, differs or is not next free slot | Exact verified reuse or handoff; unrelated decks preserved | test_managed_deck_android.py; disposable account gate |
 | PB-030 | P1 happy/error | Exhaust counters, rank proven fallbacks, repeat same battle | Proven owned untried deck chosen; budget bounds retries | test_strategy.py, test_autonomous.py |
-| PB-031 | P1 error | All safe strategies exhausted | Durable needs_attention with specific reason; no retry loop | test_autonomous.py; manual dashboard status gate |
+| PB-031 | P1 error | All safe strategies exhausted | Durable needs_attention with specific reason; no retry loop | test_autonomous.py; [Chrome synthetic handoff](BROWSER_ACCEPTANCE.md), PB-031.01 |
 | PB-032 | P1 recovery | Replay retained terminal battle outcome | Reconcile once without replaying battle or double counting | test_result_lifecycle.py, test_storage.py |
 | PB-033 | P1 recovery | Pause/handoff/resume during queue processing | Safe checkpoint honored; no action during human control | test_executor.py, test_queue_worker.py; physical gate |
 | PB-034 | P1 platform/error | Missing ADB, unauthorized or multiple devices | Diagnostic handoff; no implicit wrong-device selection | test_device.py; manual USB/RSA gate |
 | PB-035 | P1 platform/recovery | Enable then restore awake settings | Exact original settings restored; secure unlock stays human | test_device_awake.py; physical setting acceptance |
 | PB-036 | P1 platform/error | OCR/layout or game-version changes | Unknown state stops with evidence; no coordinate guessing | test_discovery_navigation.py, test_requested_owned_deck.py; physical gate |
 | PB-037 | P0 privacy | Clean source archive and release artifact inspection | No var, journal, device screenshots, credentials or serials | Manual artifact manifest audit before release |
-| PB-038 | P0 privacy/error | External browser origin/host accesses control API | Review request rejection independently of CORS visibility | tests_python/test_api.py rejects external/opaque origins, malformed/nonlocal/missing/duplicate Host and duplicate Origin; live browser gate remains |
+| PB-038 | P0 privacy/error | External browser origin/host accesses control API | Review request rejection independently of CORS visibility | tests_python/test_api.py; [Chrome hostile/opaque Origin and owned HTTP Host proof](BROWSER_ACCEPTANCE.md), PB-038.01 |
 | PB-039 | P1 error | Invalid run difficulty/action/retry limits or missing scan | API rejects and launches no job | tests_python/test_api.py (isolated ASGI requests) |
 | PB-040 | P1 recovery | Missing screenshot or capture failure | 404/503; screenshots served no-store | tests_python/test_api.py (synthetic screenshot/errors) |
-| PB-041 | P2 platform | Desktop/mobile viewport, keyboard navigation, reduced motion | Controls readable, focus visible, status understandable | tests/rendered-html.test.mjs partial only; manual browser gate |
+| PB-041 | P2 platform | Desktop/mobile viewport, keyboard navigation, reduced motion | Controls readable, focus visible, status understandable | [Chrome keyboard, viewport and reduced-motion proof](BROWSER_ACCEPTANCE.md), PB-041.01–06; physical devices, other engines and assistive technology remain separate |
 | PB-042 | P1 platform | Clean release checkout, frozen dependencies and offline fixtures | Build/render/Python/lint pass without personal runtime | Baseline commands; clean archive rerun before package release |
 
 ## Additional review regressions
@@ -81,4 +81,4 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 
 Baseline: 2026-09-22 at ae11413a1ef396a916fd1b2b9e0c810d1f9a8aae, 108 Python tests and one rendered HTML test plus build/lint passed (verified raw log `/tmp/dionlabs-burn-pbot.log`). That receipt is suite-level; it does not certify every expected outcome above. Specific newly added cases must record their test names/counts in the burn ledger. Full multi-minute suites use the portfolio resource wrapper.
 
-Post-burn acceptance: PB-004/008/029/033–036 need D-coordinated disposable device/account access; PB-012/031/041 need isolated browser interaction; PB-025 has an authorized disposable OS harness; see its dated platform-specific receipt; PB-037/042 need exact final artifact review; PB-038 needs isolated real-browser acceptance; PB-039–040 now have isolated HTTP coverage. None authorizes spending, crafting, gameplay changes on D's account, runtime cleanup, or emulator/session restarts.
+Post-burn acceptance: PB-004/008/029/033–036 need D-coordinated disposable device/account access; PB-012/031/041 have synthetic Chrome acceptance, with physical mobile/other engines/assistive technology separate; PB-025 has an authorized disposable OS harness; see its dated platform-specific receipt; PB-037/042 need exact final artifact review; PB-038 has actual Chrome Origin and owned HTTP Host acceptance; PB-039–040 now have isolated HTTP coverage. None authorizes spending, crafting, gameplay changes on D's account, runtime cleanup, or emulator/session restarts.

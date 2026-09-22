@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 — 2026-09-22
+
+- Show actionable command errors and allow retry without unhandled browser exceptions.
+- Disable conflicting pending controls and disconnected starts while preserving Stop for active jobs; retain keyboard focus after completion without overriding user navigation.
+- Ignore late status responses that would overwrite a newer confirmed command state.
+- Wrap narrow-screen controls and long activity messages, and honor reduced-motion preferences for the spending-policy tooltip.
+- Add opt-in actual Chrome/HTTP acceptance with temporary data, fake device/controller dispatch, blocked external browser traffic, real Origin/Host rejection checks and identity-verified fixture cleanup.
+
 ## 0.1.4 — 2026-09-22
 
 - Stop and recover the entire owned process group, including descendants surviving a runner exit; retain reservations and claims when identity or termination is uncertain.

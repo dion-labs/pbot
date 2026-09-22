@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- the source is a live local device frame */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type RunState = { status: string; objective: string; device_serial: string | null; updated_at: string };
 type Metrics = { battles_total: number; battles_won: number; missions_total: number; missions_complete: number; attempts_total: number };
@@ -32,17 +32,23 @@ export function Dashboard() {
   const [snapshot, setSnapshot] = useState<Snapshot>(empty);
   const [reachable, setReachable] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [commandError, setCommandError] = useState<string | null>(null);
+  const commandTrigger = useRef<HTMLButtonElement | null>(null);
+  const latestLoad = useRef(0);
   const [screenUrl, setScreenUrl] = useState<string | null>(null);
   const [streamState, setStreamState] = useState<"idle" | "live" | "stalled">("idle");
 
   const load = useCallback(async () => {
+    const requestId = ++latestLoad.current;
     try {
       const response = await fetch(`${API}/api/status`, { cache: "no-store" });
       if (!response.ok) throw new Error("API unavailable");
-      setSnapshot(await response.json());
+      const nextSnapshot = await response.json();
+      if (requestId !== latestLoad.current) return;
+      setSnapshot(nextSnapshot);
       setReachable(true);
     } catch {
-      setReachable(false);
+      if (requestId === latestLoad.current) setReachable(false);
     }
   }, []);
 
@@ -55,16 +61,36 @@ export function Dashboard() {
     };
   }, [load]);
 
+  useEffect(() => {
+    if (busy) return;
+    const trigger = commandTrigger.current;
+    commandTrigger.current = null;
+    // Disabling a pending control can move focus to the document. Restore it
+    // after completion without stealing focus if the user moved elsewhere.
+    if (trigger?.isConnected && !trigger.disabled && document.activeElement === document.body) trigger.focus();
+  }, [busy]);
+
   async function command(path: string, body?: object) {
+    if (busy) return;
+    commandTrigger.current = document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
     setBusy(true);
+    setCommandError(null);
     try {
       const response = await fetch(`${API}${path}`, {
         method: "POST",
         headers: body ? { "Content-Type": "application/json" } : undefined,
         body: body ? JSON.stringify(body) : undefined,
       });
-      if (!response.ok) throw new Error("Command failed");
+      if (!response.ok) {
+        const payload: unknown = await response.json().catch(() => null);
+        const detail = payload && typeof payload === "object" && "detail" in payload && typeof payload.detail === "string"
+          ? payload.detail : "The action could not be completed. Check the current status, then try again.";
+        setCommandError(detail);
+        return;
+      }
       await load();
+    } catch {
+      setCommandError("Could not reach the local control service. Check that it is running, then try again.");
     } finally {
       setBusy(false);
     }
@@ -154,13 +180,15 @@ export function Dashboard() {
       <section className="hero">
         <div><p className="eyebrow">CURRENT OBJECTIVE</p><h2>{state.objective}</h2><p className="lede">{connected ? !accountReady ? `Connected to ${state.device_serial}. ${snapshot.account_profile.message}. The scan is read-only and must finish before autonomous play.` : !inventoryReady ? `${snapshot.account_profile.deck_count} usable decks are verified. ${snapshot.card_inventory_profile.message}. Recipe preflight reads only the 44 stable card identities shipped with pbot.` : `Connected to ${state.device_serial}. ${snapshot.account_profile.deck_count} decks and ${snapshot.card_inventory_profile.known_count}/${snapshot.card_inventory_profile.target_count} recipe card identities are known; ${snapshot.card_inventory_profile.exact_recipe_count} shipped recipes are exact.` : "Connect and authorize an Android phone, then scan the account. Login or a secure unlock remains a human handoff."}</p></div>
         <div className="heroActions">
-          <button className="primary" disabled={busy || !reachable || ((!accountReady || !inventoryReady) && !runActive)} onClick={() => command(runActive ? "/api/runs/current/stop" : "/api/runs", runActive ? undefined : {})}>{busy ? "Working…" : runActive ? deckScanActive || cardScanActive ? "Stop scan" : "Stop pbot" : !accountReady ? "Scan account first" : !inventoryReady ? "Scan recipe cards first" : "Run pbot"}</button>
-          <button className="secondary active" disabled={!reachable || !runActive} onClick={() => command(state.status === "paused" ? "/api/control/resume" : "/api/control/pause")}>{state.status === "paused" ? "Resume" : "Pause"}</button>
+          <button className="primary" disabled={busy || !reachable || ((!connected || !accountReady || !inventoryReady) && !runActive)} onClick={() => command(runActive ? "/api/runs/current/stop" : "/api/runs", runActive ? undefined : {})}>{busy ? "Working…" : runActive ? deckScanActive || cardScanActive ? "Stop scan" : "Stop pbot" : !accountReady ? "Scan account first" : !inventoryReady ? "Scan recipe cards first" : "Run pbot"}</button>
+          <button className="secondary active" disabled={busy || !reachable || !runActive} onClick={() => command(state.status === "paused" ? "/api/control/resume" : "/api/control/pause")}>{state.status === "paused" ? "Resume" : "Pause"}</button>
           <button className="deviceCheck" disabled={busy || !connected || runActive} onClick={() => command("/api/account/bootstrap")}>{accountReady ? "Rescan account" : "Scan account"}</button>
           <button className="deviceCheck" disabled={busy || !connected || !accountReady || runActive} onClick={() => command("/api/account/cards")}>{inventoryReady ? "Rescan recipe cards" : "Scan recipe cards"}</button>
           <button className="deviceCheck" disabled={busy || !reachable || runActive} onClick={() => command("/api/device/check")}>Device check</button>
         </div>
       </section>
+
+      {commandError && <p className="commandError" role="alert">{commandError}</p>}
 
       <section className="metrics" aria-label="Progress summary">
         <article><p>Battles total</p><strong>{metrics.battles_total}</strong><span>{queue.length ? `${queue.length} currently actionable` : "Awaiting discovery"}</span></article>

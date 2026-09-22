@@ -54,7 +54,7 @@ The spending lock is a policy guard implemented by pbot, not an Android security
 
 ## Install
 
-[Download the v0.1.4 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.4), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
+[Download the v0.1.5 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.5), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
 
 Install the Xcode Command Line Tools, Node.js, `uv`, and Android Platform Tools first. Then:
 
@@ -136,10 +136,13 @@ npm test
 
 `npm test` builds and server-renders the dashboard, runs its HTML smoke test, and executes the Python harness tests. The separate [opt-in process lifecycle acceptance harness](docs/PROCESS_LIFECYCLE_ACCEPTANCE.md) tests actual disposable process trees, interruption and cleanup without using a device. Runtime data in `var/`, local environment files, screenshots, device identifiers, and the private development journal must never be committed.
 
+The opt-in [local browser acceptance harness](docs/BROWSER_ACCEPTANCE.md) checks the actual dashboard and HTTP API with temporary fictional data and fake dispatch. It includes narrow-screen layout, keyboard/error/retry behavior and Origin rejection; physical device/account acceptance remains separate.
+
 ## Project status
 
-pbot is experimental software under active development. Version `0.1.4` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
+pbot is experimental software under active development. Version `0.1.5` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
 
 See the [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), [security policy](SECURITY.md), and [brand assets](docs/brand/README.md). Questions about adapting a device or layout should begin with the [agent-assisted porting guide](docs/AGENT_PORTING.md).
 
 Released under the [MIT License](LICENSE). If pbot is useful to your own experiments, you can [sponsor Dion Labs](https://github.com/sponsors/dion-labs).
+
