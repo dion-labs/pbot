@@ -130,3 +130,19 @@ Root rereview cleared the scoped v0.1.4 publication hold:62targeted tests and in
 Final frozen candidate verification: **39/39 actual OS cases passed**, every cleanup `verified-empty`, evidence `/var/folders/vq/rkb95_8n02d4c91kltpxr1r80000gp/T/pbot-process-acceptance-9dybsc2u/report.json`. Full build/render/**167 Python tests** and lint passed, logs `/tmp/pbot-v014-suite.log` and `/tmp/pbot-process-v014-final.log`. Root review hold is cleared. Next gate is exact committed source archive validation and publication.
 
 Exact candidate archive passed frozen installs/lint/build/render/167 Python/npm audit and13/13 actual OS cases (all groups empty), report `.../pbot-process-acceptance-_3b24w3z/report.json`, log `/tmp/pbot-release-0.1.4-validation.log`. Isolated Python/API/distribution/pyproject/npm versions all0.1.4. CI verify passed, but secret scan flagged descriptive prose on this ledger line110, not a credential. Added one exact historical fingerprint exclusion and rewrote that prose; no broad rule/path exclusion. Final archive will be regenerated for this documentation/scanner-only commit and checked again before publication.
+
+## Published v0.1.4 — final verified receipt
+
+Experimental prerelease: https://github.com/dion-labs/pbot/releases/tag/v0.1.4
+Exact release commit: `249a44a9972a8ecd481f92c9034d86e5bb1f815d` (reviewed product batch `db65e42`; final delta is documentation and one exact historical prose scanner false-positive exclusion).
+Source: https://github.com/dion-labs/pbot/releases/download/v0.1.4/pbot-0.1.4.tar.gz
+Checksums: https://github.com/dion-labs/pbot/releases/download/v0.1.4/SHA256SUMS
+Downloaded source bytes match validated archive and checksum: `36c7bffd3c113f7502f9608935183b18a5183e4794e809cb11615139ed6764f5`.
+
+Acceptance: frozen clean-source installs, lint, production build, rendered HTML, **167 Python tests**, npm audit (zero vulnerabilities), and **13/13 actual OS cases**, all fixture groups verified empty. Final report `/var/folders/vq/rkb95_8n02d4c91kltpxr1r80000gp/T/pbot-process-acceptance-8pdxmv55/report.json`; log `/tmp/pbot-release-0.1.4-final-validation.log`. Repeated pre-archive candidate run passed **39/39** with exact unchanged product/harness source. Python/API/package/npm version agreement checked in isolated state. Exact release-head GitHub CI (verify and secrets) passed: https://github.com/dion-labs/pbot/actions/runs/35701995417 . All previous releases preserved.
+
+PB-025 now has real macOS same-group inert-process acceptance for all13 documented cases. Additional PB-047 device/profile mismatch preflight is covered by synthetic API/CLI negatives and matching-device positives. README download reference updated. Site worker receives validated links for local alignment only.
+
+Remaining acceptance, explicitly unrun: PB-004/029 physical owned-deck/Battle Rules read-back and unrelated-slot preservation; PB-008/034/036 USB/RSA/reconnect and unsupported layouts; PB-033/035 pause/handoff/resume, awake restore and human secure unlock; PB-012/031/038/041 isolated live-browser/mobile/focus and Origin enforcement. Account changes on the same hardware require manual rescanning. Other kernels, escaped process sessions, inaccessible process metadata and exhaustive scheduler/PID-reuse interleavings are outside the13-case proof. No real account/device/gameplay, ADB, production runtime cleanup, live session restart or website deployment occurred.
+
+Safe independent process and profile-preflight milestones are complete. Remaining product acceptance needs coordinated disposable device/account or live-browser fixtures; further gameplay/recipe/layout implementation needs permitted observations. Do not invent recipes or resume D's real account to obtain them.
