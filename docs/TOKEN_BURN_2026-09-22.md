@@ -86,3 +86,21 @@ Final v0.1.1 push exposed four GitHub dependency alerts. Queried exact manifests
 Published v0.1.2 at code 94e5daa66748a37b18f44a2883eb41f39979941c. Clean archive lint/build/render/149 tests and npm audit passed; Python audit remained clean. Downloaded source SHA256 `5cc2503d2437e601eae1626f18d4297d30eb307e918ebfecf963972b5efa874d` matches validated bytes. Exact-head GitHub CI 35697596692 passed, and GitHub open Dependabot alerts are now empty. Site worker notified.
 
 Final consistency check caught preexisting `pbot.__version__ = "0.1.0"` despite current package/API metadata. v0.1.3 will derive Python and API reporting from installed distribution metadata (uninstalled source reports `0+unknown`) so the values cannot drift independently. Existing published releases remain unchanged; this is a version-reporting correction, no gameplay/control-policy change.
+
+## Final burn handoff — v0.1.3, 2026-09-22
+
+Final experimental release: https://github.com/dion-labs/pbot/releases/tag/v0.1.3 ; exact code head `e4fd2b2ba1faa0b5deccbdecce45c0efaa9d56bb`. Source and SHA256SUMS uploaded and downloaded again; validated archive SHA256 `0659d549b98e4694c2146e1d336e5e950898ea1a7dd5e845276a289388a207f2` matches published bytes. Earlier releases remain immutable.
+
+Exact clean-source validation passed: frozen npm/uv installs, lint, production build, rendered HTML, **149 Python tests**, npm audit (zero known vulnerabilities), and installed package version assertion. Independent isolated check verified Python package, installed distribution, pyproject, npm and API all report 0.1.3. Python frozen dependency audit reports no known vulnerabilities. GitHub Dependabot open alert count is **0**; exact-head CI including secrets/verify passed: https://github.com/dion-labs/pbot/actions/runs/35697908420 . Local raw log: `/tmp/pbot-release-0.1.3-validation.log`.
+
+Final scope: **46 stable QA IDs**, 41 additional Python cases over baseline, reviewed worker lifecycle/recovery and process ownership corrections, API Host/Origin enforcement, patched build/test dependencies, consistent installed version reporting, published source/checksums and current download link. Site worker received final verified URLs for local alignment only. Four worker-created extracted install/test trees were removed after validation; source archives, checksum files, downloads and logs retained.
+
+Exact unrun post-burn acceptance:
+
+1. PB-004/029: on a coordinated disposable account/device, select the intended owned deck, verify Battle Rules read-back, and confirm managed slot changes preserve unrelated decks.
+2. PB-008/034/036: USB loss/reconnect, RSA authorization, unsupported layout/OCR and game-version handoffs; prove no wrong-device or guessed action.
+3. PB-033/035: physical pause/handoff/resume and awake-setting restore; verify secure unlock remains human-controlled.
+4. PB-012/031/038/041: isolated live desktop/mobile browser, keyboard/focus/status presentation, and real-browser Origin rejection with unchanged state.
+5. PB-025: coordinated long-running isolated process-tree stop/recovery acceptance; synthetic PID/cleanup tests do not certify every OS process-tree race.
+
+These require coordinated manual/device/browser sessions and remain explicitly unrun. No real account gameplay/spending/crafting, live session/emulator restart, website deployment, personal runtime cleanup or excluded integration work occurred. Further recipe/strategy/visual-state vision work needs new permitted observations; do not invent recipes or resume D's account to generate evidence. Resume from this ledger, QA_CASES.md, journal, inbox and current Git state.
