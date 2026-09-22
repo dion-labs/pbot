@@ -54,7 +54,7 @@ The spending lock is a policy guard implemented by pbot, not an Android security
 
 ## Install
 
-[Download the v0.1.3 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.3), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
+[Download the v0.1.4 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.4), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
 
 Install the Xcode Command Line Tools, Node.js, `uv`, and Android Platform Tools first. Then:
 
@@ -79,6 +79,8 @@ pbot checks Android Studio's standard macOS SDK location automatically. If ADB i
 4. Complete game login or secure unlock manually if requested.
 5. Press **Scan account**, then **Scan recipe cards**. These read-only scans establish which numbered decks and shipped recipe cards the account can actually use.
 6. Review the safety status and press **Run pbot**.
+
+Scan evidence must match the selected device. Rerun both scans after switching game accounts; a device identifier alone does not identify which account is logged in.
 
 The autonomous worker runs as a detached, durable job. The dashboard can be closed and reopened without losing SQLite progress. Pause or Stop when disconnecting the device.
 
@@ -132,11 +134,11 @@ npm run lint
 npm test
 ```
 
-`npm test` builds and server-renders the dashboard, runs its HTML smoke test, and executes the Python harness tests. Runtime data in `var/`, local environment files, screenshots, device identifiers, and the private development journal must never be committed.
+`npm test` builds and server-renders the dashboard, runs its HTML smoke test, and executes the Python harness tests. The separate [opt-in process lifecycle acceptance harness](docs/PROCESS_LIFECYCLE_ACCEPTANCE.md) tests actual disposable process trees, interruption and cleanup without using a device. Runtime data in `var/`, local environment files, screenshots, device identifiers, and the private development journal must never be committed.
 
 ## Project status
 
-pbot is experimental software under active development. Version `0.1.3` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
+pbot is experimental software under active development. Version `0.1.4` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
 
 See the [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), [security policy](SECURITY.md), and [brand assets](docs/brand/README.md). Questions about adapting a device or layout should begin with the [agent-assisted porting guide](docs/AGENT_PORTING.md).
 

@@ -19,6 +19,7 @@ from .storage import Store
 
 ACTIVE_STATUSES = {"starting", "running", "stopping"}
 TERMINAL_STATUSES = {"succeeded", "completed", "needs_attention", "failed", "stopped"}
+JOB_TOKEN_ENV = "PBOT_MANAGED_JOB_ID"
 
 
 def utc_now() -> str:
@@ -49,22 +50,111 @@ def process_alive(pid: int | None) -> bool:
     return True
 
 
-def process_matches_job(pid: int, job_id: str) -> bool:
-    """Require the random launch token in the runner command, not just a PID."""
-    if not process_alive(pid):
-        return False
+def runner_identity(pid: int, job_id: str) -> str:
+    """Distinguish positive mismatch from unavailable process arguments."""
     result = subprocess.run(
         ["ps", "-ww", "-p", str(pid), "-o", "command="],
         check=False, capture_output=True, text=True,
     )
+    command = result.stdout.strip()
+    if result.returncode or not command or (command.startswith("(") and command.endswith(")")):
+        return "uncertain"
     # ps prints argv rather than shell-escaped source. Worker arguments may
     # contain unmatched quote characters; inspect only our fixed token fields.
-    arguments = result.stdout.split()
+    arguments = command.split()
+    if len(arguments) == 1 and "python" in Path(arguments[0]).name.lower():
+        return "uncertain"
     token = ["-m", "pbot.managed_job_runner", "--job-id", job_id]
-    return result.returncode == 0 and any(
-        arguments[index:index + len(token)] == token
-        for index in range(len(arguments))
+    if any(arguments[index:index + len(token)] == token for index in range(len(arguments))):
+        return "owned"
+    return "unrelated"
+
+
+def process_matches_job(pid: int, job_id: str) -> bool:
+    """Require positive runner identity; false alone is not proof of reuse."""
+    return process_alive(pid) and runner_identity(pid, job_id) == "owned"
+
+
+def process_group_members(pgid: int) -> list[int]:
+    """List executable members without reading unrelated process arguments."""
+    result = subprocess.run(
+        ["ps", "-ax", "-o", "pid=,pgid=,stat="],
+        check=False, capture_output=True, text=True,
     )
+    if result.returncode:
+        raise RuntimeError("Cannot inspect managed process group; ownership retained")
+    members = []
+    observed_processes = 0
+    for line in result.stdout.splitlines():
+        fields = line.split()
+        if len(fields) == 3 and fields[0].isdigit() and fields[1].isdigit():
+            observed_processes += 1
+            if int(fields[1]) == pgid and not fields[2].startswith("Z"):
+                members.append(int(fields[0]))
+    if not observed_processes:
+        raise RuntimeError("Process listing unavailable; managed ownership retained")
+    return members
+
+
+def process_has_job_token(pid: int, job_id: str) -> bool:
+    # Children/grandchildren inherit this random launch marker. Inspect only
+    # candidate group members, and never persist or log their environment.
+    result = subprocess.run(
+        ["ps", "eww", "-p", str(pid), "-o", "command="],
+        check=False, capture_output=True, text=True,
+    )
+    return result.returncode == 0 and f"{JOB_TOKEN_ENV}={job_id}" in result.stdout.split()
+
+
+def process_group_state(pid: int, job_id: str) -> tuple[str, list[int]]:
+    """Return owned/gone/unrelated/uncertain; uncertainty never releases a job.
+
+    A live runner proves its group via its exact command token. After its exit,
+    every remaining member must retain the inherited marker before signalling.
+    A different live group leader is a reused PID, not a target to terminate.
+    """
+    if pid <= 0:
+        return "gone", []
+    for _ in range(3):
+        members = process_group_members(pid)
+        if not members:
+            return "gone", []
+        if pid in members:
+            identity = runner_identity(pid, job_id)
+            if identity in {"owned", "unrelated"}:
+                return identity, members
+            continue  # Missing argv may mean inspection failure or runner exit.
+        for member in members:
+            if not process_has_job_token(member, job_id):
+                if not process_alive(member):
+                    break  # A descendant exited while being inspected.
+                return "uncertain", members
+        else:
+            return "owned", members
+    return "uncertain", members
+
+
+def terminate_job_group(pid: int, job_id: str) -> None:
+    """Stop an owned group, retaining ownership unless termination is proven."""
+    for sig, timeout in ((signal.SIGTERM, 3.0), (signal.SIGKILL, 3.0)):
+        ownership, _members = process_group_state(pid, job_id)
+        if ownership in {"gone", "unrelated"}:
+            return
+        if ownership != "owned":
+            raise RuntimeError("Cannot verify remaining managed processes; no signal sent, ownership retained")
+        try:
+            os.killpg(pid, sig)
+        except ProcessLookupError:
+            return
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            ownership, _members = process_group_state(pid, job_id)
+            if ownership in {"gone", "unrelated"}:
+                return
+            if ownership != "owned":
+                raise RuntimeError("Cannot verify remaining managed processes; ownership retained")
+            time.sleep(0.05)
+    raise RuntimeError("Managed process group did not terminate; ownership retained")
 
 
 def serialized_lifecycle(method):
@@ -112,14 +202,15 @@ class ManagedJobState:
     def create(self, command: list[str], log_path: Path) -> dict[str, object]:
         with self._locked():
             current = self._read_unlocked()
-            if current and current.get("status") in ACTIVE_STATUSES:
+            if current:
                 pid = int(current.get("pid") or 0)
-                owned = (
-                    process_matches_job(pid, str(current["id"])) if pid
-                    else process_alive(int(current.get("launcher_pid") or 0))
-                )
+                if pid:
+                    ownership, _members = process_group_state(pid, str(current["id"]))
+                    owned = ownership in {"owned", "uncertain"}
+                else:
+                    owned = current.get("status") in ACTIVE_STATUSES and process_alive(int(current.get("launcher_pid") or 0))
                 if owned:
-                    raise RuntimeError(f"Managed pbot job {current['id']} is already {current['status']}")
+                    raise RuntimeError(f"Managed pbot job {current['id']} is already {current['status']}; processes still reserved")
             now = utc_now()
             payload: dict[str, object] = {
                 "id": uuid.uuid4().hex[:12],
@@ -154,6 +245,11 @@ class ManagedQueueController:
         self.data_dir = data_dir
         self.state = ManagedJobState(data_dir / "managed-queue-job.json")
         self.store = Store(database_path)
+        self._initialize_store()
+
+    @serialized_lifecycle
+    def _initialize_store(self) -> None:
+        # A cold SQLite database can reject simultaneous WAL initialization.
         self.store.initialize()
 
     @serialized_lifecycle
@@ -195,6 +291,7 @@ class ManagedQueueController:
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
                     close_fds=True,
+                    env={**os.environ, JOB_TOKEN_ENV: job_id},
                 )
             payload = self.state.update(job_id, pid=process.pid)
         except Exception as exc:
@@ -207,7 +304,10 @@ class ManagedQueueController:
                     except ProcessLookupError:
                         pass
                     process.wait(timeout=3)
-                except (OSError, subprocess.TimeoutExpired):
+                    # Reaping the runner alone does not prove its descendants
+                    # have stopped. Keep ownership until the group is clear.
+                    terminate_job_group(process.pid, job_id)
+                except (OSError, subprocess.TimeoutExpired, RuntimeError):
                     # Keep ownership active if termination cannot be confirmed.
                     # The runner also publishes its own PID independently.
                     self.state.update(
@@ -217,11 +317,14 @@ class ManagedQueueController:
                         message="Startup failed; worker cleanup unconfirmed; stop required",
                     )
                     raise
+            recovery = self.store.recover_interrupted_work() if process is not None else {}
             self.state.update(
                 job_id,
+                pid=process.pid if process is not None else None,
                 status="failed",
                 finished_at=utc_now(),
                 message=f"Could not launch detached worker: {exc}",
+                recovery=recovery,
             )
             raise
         self.store.add_event(
@@ -244,10 +347,20 @@ class ManagedQueueController:
                 return None
             status = str(payload.get("status"))
             pid = int(payload.get("pid") or 0)
-            owned = (
-                process_matches_job(pid, str(payload["id"])) if pid
-                else process_alive(int(payload.get("launcher_pid") or 0))
-            ) if status in ACTIVE_STATUSES else False
+            if pid:
+                ownership, members = process_group_state(pid, str(payload["id"]))
+            else:
+                ownership = "owned" if process_alive(int(payload.get("launcher_pid") or 0)) else "gone"
+                members = []
+            owned = ownership in {"owned", "uncertain"}
+            descendants_remain = any(member != pid for member in members)
+            if pid and owned and (pid not in members or (status not in ACTIVE_STATUSES and descendants_remain)):
+                payload.update(
+                    status="stopping",
+                    finished_at=None,
+                    message="Runner exited but descendants remain; stop required before recovery or restart",
+                )
+                self.state._write_unlocked(payload)
             if status in ACTIVE_STATUSES and not owned:
                 recovery = self.store.recover_interrupted_work()
                 payload.update(
@@ -275,16 +388,7 @@ class ManagedQueueController:
         job_id = str(payload["id"])
         pid = int(payload.get("pid") or 0)
         self.state.update(job_id, status="stopping", message="Stop requested")
-        if process_matches_job(pid, job_id):
-            try:
-                os.killpg(pid, signal.SIGTERM)
-                deadline = time.monotonic() + 3
-                while process_matches_job(pid, job_id) and time.monotonic() < deadline:
-                    time.sleep(0.05)
-                if process_matches_job(pid, job_id):
-                    os.killpg(pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+        terminate_job_group(pid, job_id)
         recovery = self.store.recover_interrupted_work()
         payload = self.state.update(
             job_id,

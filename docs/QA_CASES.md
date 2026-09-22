@@ -38,7 +38,7 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 | PB-022 | P1 happy/error | Detached synthetic command exits zero/nonzero | Exact exit status and log persisted; failure never called success | test_managed_job.py |
 | PB-023 | P1 error | Old worker attempts update after replacement | Stale job ID rejected without modifying current job | test_managed_job.py |
 | PB-024 | P1 recovery | Query vanished running process twice | One recovery transition/event, no fabricated win | test_managed_job.py; test_storage.py |
-| PB-025 | P0 recovery | Stop isolated active process group | Only owned group terminated; interrupted claims recoverable | Manual isolated process acceptance; never existing session |
+| PB-025 | P0 recovery | Stop isolated active process group | Only owned group terminated; interrupted claims recoverable | [Opt-in real OS harness](PROCESS_LIFECYCLE_ACCEPTANCE.md), PB-025.01–13; no existing session |
 | PB-026 | P1 happy | No job, missing log, excessive requested log length | Empty result or bounded tail, no crash | test_managed_job.py |
 | PB-027 | P0 error | Partial deck/card scan fails mid-traversal | No partial collection published as ready | test_account_scan.py, test_card_scan.py, test_account_bootstrap.py |
 | PB-028 | P0 error | Wrong variant, missing card or insufficient copies | Constructor rejects; no spend or substitution outside recipe | test_deck_recipe.py, test_card_inventory.py, test_managed_deck.py |
@@ -71,8 +71,14 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 |---|---|---|---|---|
 | PB-046 | P1 privacy/platform | Audit complete frozen npm/Python dependency graph and rebuild with patched versions | Known advisories resolved without weakening platform support; frozen install/build/test still pass | npm audit --json; uv export --frozen --no-hashes --no-emit-project then pip-audit --no-deps --disable-pip; npm test |
 
+## Scan binding
+
+| ID | Priority / class | Procedure | Expected result | Mapping |
+|---|---|---|---|---|
+| PB-047 | P0 error/recovery | Select a device different from either saved scan, or supply a scan without device identity; retry after matching scans | API rejects before launch and CLI hands off before constructing an adapter; existing profiles retained; matching device accepted | test_api.py profile cases; test_profile_preflight.py; actual account switches on the same hardware still require manual rescanning |
+
 ## Evidence and unresolved coverage
 
 Baseline: 2026-09-22 at ae11413a1ef396a916fd1b2b9e0c810d1f9a8aae, 108 Python tests and one rendered HTML test plus build/lint passed (verified raw log `/tmp/dionlabs-burn-pbot.log`). That receipt is suite-level; it does not certify every expected outcome above. Specific newly added cases must record their test names/counts in the burn ledger. Full multi-minute suites use the portfolio resource wrapper.
 
-Post-burn acceptance: PB-004/008/029/033–036 need D-coordinated disposable device/account access; PB-012/031/041 need isolated browser interaction; PB-025 needs coordinated isolated process lifecycle acceptance; PB-037/042 need exact final artifact review; PB-038 needs isolated real-browser acceptance; PB-039–040 now have isolated HTTP coverage. None authorizes spending, crafting, gameplay changes on D's account, runtime cleanup, or emulator/session restarts.
+Post-burn acceptance: PB-004/008/029/033–036 need D-coordinated disposable device/account access; PB-012/031/041 need isolated browser interaction; PB-025 has an authorized disposable OS harness; see its dated platform-specific receipt; PB-037/042 need exact final artifact review; PB-038 needs isolated real-browser acceptance; PB-039–040 now have isolated HTTP coverage. None authorizes spending, crafting, gameplay changes on D's account, runtime cleanup, or emulator/session restarts.

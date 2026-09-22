@@ -15,6 +15,7 @@ from pbot.recommendation_backfill import (
     recognize_with_vision_binary,
 )
 from pbot.storage import Store
+from pbot.profile_preflight import ProfileDeviceMismatch, require_profile_device
 from pbot.strategy import BuildStrategyDecision
 
 from build_managed_deck import AndroidManagedDeckPort, cached_qr
@@ -53,7 +54,18 @@ def main() -> None:
         store.add_event("run.card_scan_required", message, "warning", card_profile)
         print(json.dumps({"status": "needs_attention", "message": message}, indent=2))
         raise SystemExit(2)
-    serial = args.serial or settings.adb_serial
+    # Without an override, stay pinned to the device that supplied the scans;
+    # never let an implicit ADB selection reuse another device's ownership data.
+    serial = args.serial or settings.adb_serial or str(profile.get("device_serial") or "") or None
+    try:
+        require_profile_device(serial, profile, "owned decks")
+        require_profile_device(serial, card_profile, "recipe cards")
+    except ProfileDeviceMismatch as exc:
+        message = str(exc)
+        store.set_state("needs_attention", message, serial)
+        store.add_event("run.profile_device_mismatch", message, "warning")
+        print(json.dumps({"status": "needs_attention", "message": message}, indent=2))
+        raise SystemExit(2) from exc
     device = AndroidVision(settings.project_root, serial)
     difficulties = tuple(args.difficulties or ("Intermediate", "Advanced", "Expert"))
 

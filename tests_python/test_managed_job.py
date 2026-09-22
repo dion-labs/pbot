@@ -13,6 +13,7 @@ def test_managed_job_state_rejects_a_live_duplicate(tmp_path: Path, monkeypatch:
     state.update(str(first["id"]), pid=1234, status="running")
     monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: pid == 1234)
     monkeypatch.setattr("pbot.managed_job.process_matches_job", lambda pid, job_id: pid == 1234)
+    monkeypatch.setattr("pbot.managed_job.process_group_state", lambda pid, job_id: ("owned", [pid]) if pid == 1234 else ("gone", []))
 
     with pytest.raises(RuntimeError, match="already running"):
         state.create(["python", "other.py"], tmp_path / "other.log")
@@ -169,6 +170,7 @@ def test_pid_publication_failure_cannot_leave_replaceable_live_worker(tmp_path: 
     monkeypatch.setattr("pbot.managed_job.os.killpg", kill_group)
     monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: pid in alive)
     monkeypatch.setattr("pbot.managed_job.process_matches_job", lambda pid, job_id: pid in alive)
+    monkeypatch.setattr("pbot.managed_job.process_group_state", lambda pid, job_id: ("owned", [pid]) if pid in alive else ("gone", []))
     update = controller.state.update
     failed_once = False
     def fail_first_pid(job_id, **changes):
@@ -198,6 +200,7 @@ def test_reused_pid_is_never_signalled(tmp_path: Path, monkeypatch):
     job = controller.state.create(["synthetic-worker"], tmp_path / "worker.log")
     controller.state.update(job["id"], status="running", pid=987654)
     monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: True)
+    monkeypatch.setattr("pbot.managed_job.process_group_members", lambda pid: [987654])
     from types import SimpleNamespace
     monkeypatch.setattr("pbot.managed_job.subprocess.run", lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="unrelated application --job-id other"))
     def forbidden_signal(*args):
@@ -220,3 +223,59 @@ def test_runner_identity_requires_exact_launch_token(monkeypatch, command, expec
     monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: True)
     monkeypatch.setattr("pbot.managed_job.subprocess.run", lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=command))
     assert process_matches_job(987654, "synthetic123") is expected
+
+
+
+def test_unconfirmed_group_termination_keeps_claims_and_reservation(tmp_path: Path, monkeypatch):
+    import itertools
+    import signal
+    controller = ManagedQueueController(tmp_path, tmp_path / "db.sqlite3", tmp_path / "var")
+    job = controller.state.create(["synthetic-worker"], tmp_path / "worker.log")
+    controller.state.update(job["id"], pid=987654, status="running")
+    attempt = controller.store.start_attempt("fixture:battle", "Fixture", "Intermediate", "Inert", "owned", "auto")
+    controller.store.claim_battle("fixture:battle")
+    monkeypatch.setattr("pbot.managed_job.process_group_state", lambda pid, job_id: ("owned", [pid]))
+    clock = itertools.count()
+    monkeypatch.setattr("pbot.managed_job.time.monotonic", lambda: float(next(clock)))
+    monkeypatch.setattr("pbot.managed_job.time.sleep", lambda seconds: None)
+    signals = []
+    monkeypatch.setattr("pbot.managed_job.os.killpg", lambda pid, sig: signals.append((pid, sig)))
+    with pytest.raises(RuntimeError, match="did not terminate; ownership retained"):
+        controller.stop()
+    assert signals == [(987654, signal.SIGTERM), (987654, signal.SIGKILL)]
+    assert controller.state.read()["status"] == "stopping"
+    with controller.store.connect() as connection:
+        assert connection.execute("SELECT finished_at FROM attempts WHERE id = ?", (attempt,)).fetchone()[0] is None
+        assert connection.execute("SELECT state FROM battle_work WHERE battle_id = 'fixture:battle'").fetchone()[0] == "in_progress"
+    with pytest.raises(RuntimeError, match="already"):
+        controller.state.create(["replacement"], tmp_path / "other.log")
+
+
+
+@pytest.mark.parametrize("returncode,command", [(1, ""), (0, ""), (0, "(python3.13)"), (0, "/usr/bin/python3")])
+def test_unavailable_runner_identity_never_releases_or_signals(tmp_path: Path, monkeypatch, returncode, command):
+    from types import SimpleNamespace
+    from pbot.managed_job import process_group_state
+    controller = ManagedQueueController(tmp_path, tmp_path / "db.sqlite3", tmp_path / "var")
+    job = controller.state.create(["synthetic-worker"], tmp_path / "worker.log")
+    controller.state.update(job["id"], pid=987654, status="running")
+    monkeypatch.setattr("pbot.managed_job.process_group_members", lambda pid: [987654, 987655])
+    monkeypatch.setattr("pbot.managed_job.subprocess.run", lambda *args, **kwargs: SimpleNamespace(returncode=returncode, stdout=command))
+    def forbidden(*args):
+        raise AssertionError("Uncertain ownership must not be signalled")
+    monkeypatch.setattr("pbot.managed_job.os.killpg", forbidden)
+    assert process_group_state(987654, job["id"])[0] == "uncertain"
+    assert controller.status()["status"] == "running"
+    with pytest.raises(RuntimeError, match="already"):
+        controller.state.create(["replacement"], tmp_path / "replacement.log")
+    with pytest.raises(RuntimeError, match="ownership retained"):
+        controller.stop()
+    assert controller.state.read()["status"] == "stopping"
+
+
+def test_empty_process_listing_is_not_proof_of_termination(monkeypatch):
+    from types import SimpleNamespace
+    from pbot.managed_job import process_group_state
+    monkeypatch.setattr("pbot.managed_job.subprocess.run", lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=""))
+    with pytest.raises(RuntimeError, match="ownership retained"):
+        process_group_state(987654, "synthetic")

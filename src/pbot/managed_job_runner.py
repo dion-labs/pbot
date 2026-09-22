@@ -5,7 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from .managed_job import ManagedJobState, utc_now
+from .managed_job import JOB_TOKEN_ENV, ManagedJobState, utc_now
 from .storage import Store
 
 
@@ -33,7 +33,8 @@ def main() -> None:
     )
 
     try:
-        completed = subprocess.run(command, cwd=args.project_root, check=False)
+        completed = subprocess.run(command, cwd=args.project_root, check=False,
+                                   env={**os.environ, JOB_TOKEN_ENV: args.job_id})
         success = completed.returncode == 0
         run_state = store.get_state()
         pbot_status = str(run_state.get("status") or "")

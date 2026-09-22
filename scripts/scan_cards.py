@@ -23,6 +23,7 @@ from pbot.card_inventory import (
 from pbot.config import Settings
 from pbot.managed_deck import ManagedDeckError, active_battle_likely
 from pbot.storage import Store
+from pbot.profile_preflight import ProfileDeviceMismatch, require_profile_device
 
 
 CARD_SEARCH_OVERRIDES = {
@@ -379,6 +380,15 @@ def main() -> int:
     if account.get("status") != "ready":
         message = "Complete the owned-deck account scan before recipe card preflight"
         store.fail_card_scan(serial, message)
+        print(json.dumps({"status": "needs_attention", "message": message}, indent=2))
+        return 2
+    serial = serial or str(account.get("device_serial") or "") or None
+    try:
+        require_profile_device(serial, account, "owned decks")
+    except ProfileDeviceMismatch as exc:
+        message = str(exc)
+        store.set_state("needs_attention", message, serial)
+        store.add_event("account.profile_device_mismatch", message, "warning")
         print(json.dumps({"status": "needs_attention", "message": message}, indent=2))
         return 2
     scanner = AndroidCardInventoryPort(settings.project_root, serial)

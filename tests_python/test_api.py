@@ -104,3 +104,44 @@ def test_local_dashboard_origin_allowed(app, host):
 def test_missing_or_duplicate_security_headers_rejected(app, headers):
     assert request(app, "POST", "/api/control/pause", headers=headers)[0] in {400, 403}
     assert app.state.harness.store.get_state()["status"] == "offline"
+
+
+
+@pytest.mark.parametrize("account_serial,card_serial", [
+    ("fixture-a", "fixture-a"), ("fixture-b", "fixture-a"), (None, "fixture-b"), ("fixture-b", None),
+])
+def test_run_rejects_profiles_not_bound_to_selected_device(app, monkeypatch, account_serial, card_serial):
+    from types import SimpleNamespace
+    from pbot.api import ManagedQueueController
+    store = app.state.harness.store
+    monkeypatch.setattr(store, "get_account_profile", lambda: {"status": "ready", "device_serial": account_serial})
+    monkeypatch.setattr(store, "get_card_inventory_profile", lambda: {"status": "ready", "device_serial": card_serial})
+    monkeypatch.setattr(app.state.harness.device, "doctor", lambda: SimpleNamespace(ready=True, selected_serial="fixture-b", message="synthetic ready"))
+    launches = []
+    monkeypatch.setattr(ManagedQueueController, "start", lambda self, command: launches.append(command) or {"id": "inert-stub"})
+    assert request(app, "POST", "/api/runs", {})[0] == 409
+    assert launches == []
+
+
+def test_matching_device_profiles_allow_run_preflight(app, monkeypatch):
+    from types import SimpleNamespace
+    from pbot.api import ManagedQueueController
+    store = app.state.harness.store
+    monkeypatch.setattr(store, "get_account_profile", lambda: {"status": "ready", "device_serial": "fixture-b"})
+    monkeypatch.setattr(store, "get_card_inventory_profile", lambda: {"status": "ready", "device_serial": "fixture-b"})
+    monkeypatch.setattr(app.state.harness.device, "doctor", lambda: SimpleNamespace(ready=True, selected_serial="fixture-b", message="synthetic ready"))
+    launches = []
+    monkeypatch.setattr(ManagedQueueController, "start", lambda self, command: launches.append(command) or {"id": "inert-stub"})
+    assert request(app, "POST", "/api/runs", {})[0] == 200
+    assert launches[0][launches[0].index("--serial") + 1] == "fixture-b"
+
+
+def test_card_scan_rejects_deck_profile_from_another_device(app, monkeypatch):
+    from pbot.api import ManagedQueueController
+    store = app.state.harness.store
+    monkeypatch.setattr(store, "get_account_profile", lambda: {"status": "ready", "device_serial": "fixture-a"})
+    store.set_state("ready", "synthetic", "fixture-b")
+    launches = []
+    monkeypatch.setattr(ManagedQueueController, "start", lambda self, command: launches.append(command) or {"id": "inert-stub"})
+    assert request(app, "POST", "/api/account/cards")[0] == 409
+    assert launches == []

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 — 2026-09-22
+
+- Stop and recover the entire owned process group, including descendants surviving a runner exit; retain reservations and claims when identity or termination is uncertain.
+- Serialize fresh controller database initialization and preserve terminal results during the runner's final bookkeeping window.
+- Recover interrupted claims only after confirmed cleanup when PID publication fails after a worker has started.
+- Add an opt-in real-process acceptance harness with disposable projects, inert child/grandchild fixtures, interruption/restart cases and verified owned-process cleanup.
+- Reject missing or mismatched device bindings in deck/card preflight before API launch or CLI adapter construction; CLI defaults stay pinned to the scanned device.
+
 ## 0.1.3 — 2026-09-22
 
 - Derive Python package and API version reporting from installed distribution metadata, replacing a stale 0.1.0 constant and preventing future drift between those reports.

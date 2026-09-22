@@ -13,6 +13,7 @@ from .config import Settings, _loopback_host
 from .device import AdbDeviceAdapter, DeviceError
 from .engine import Harness
 from .managed_job import ACTIVE_STATUSES, ManagedQueueController
+from .profile_preflight import ProfileDeviceMismatch, require_profile_device
 from .storage import Store
 
 
@@ -124,6 +125,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             harness.store.set_state("offline", "Connect and authorize an Android device")
             raise HTTPException(status_code=409, detail=device_report.message)
         serial = settings.adb_serial or device_report.selected_serial
+        try:
+            require_profile_device(serial, profile, "owned decks")
+            require_profile_device(serial, card_profile, "recipe cards")
+        except ProfileDeviceMismatch as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         command = [sys.executable, str(settings.project_root / "scripts" / "run_autonomous.py")]
         command.extend(["--serial", serial])
         for difficulty in difficulties:
@@ -161,12 +167,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         current = controller.status()
         if current and current.get("status") in ACTIVE_STATUSES:
             raise HTTPException(status_code=409, detail="Another managed pbot job is active")
-        if harness.store.get_account_profile().get("status") != "ready":
+        profile = harness.store.get_account_profile()
+        if profile.get("status") != "ready":
             raise HTTPException(status_code=409, detail="Scan owned decks before recipe cards")
         state = harness.store.get_state()
         serial = settings.adb_serial or str(state.get("device_serial") or "") or None
         if not serial:
             raise HTTPException(status_code=409, detail="Connect and authorize an Android device first")
+        try:
+            require_profile_device(serial, profile, "owned decks")
+        except ProfileDeviceMismatch as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
         command = [
             sys.executable,
             str(settings.project_root / "scripts" / "scan_cards.py"),
