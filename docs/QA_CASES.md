@@ -57,6 +57,14 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 | PB-041 | P2 platform | Desktop/mobile viewport, keyboard navigation, reduced motion | Controls readable, focus visible, status understandable | tests/rendered-html.test.mjs partial only; manual browser gate |
 | PB-042 | P1 platform | Clean release checkout, frozen dependencies and offline fixtures | Build/render/Python/lint pass without personal runtime | Baseline commands; clean archive rerun before package release |
 
+## Additional review regressions
+
+| ID | Priority / class | Procedure | Expected result | Mapping |
+|---|---|---|---|---|
+| PB-043 | P0 concurrency/recovery | PID publication fails after spawning; cleanup succeeds or fails | New session killed/reaped before reservation released, or active ownership retained; no overlapping worker | test_pid_publication_failure_cannot_leave_replaceable_live_worker |
+| PB-044 | P0 privacy/recovery | Stored worker PID belongs to unrelated process | Exact random job token required; unrelated group never signalled | test_reused_pid_is_never_signalled; test_runner_identity_requires_exact_launch_token |
+| PB-045 | P1 recovery | Runner completes while status probes process | State lock preserves recorded terminal outcome | test_detached_job_records_completion_and_log; test_nonzero_worker_exit_is_failure |
+
 ## Evidence and unresolved coverage
 
 Baseline: 2026-09-22 at ae11413a1ef396a916fd1b2b9e0c810d1f9a8aae, 108 Python tests and one rendered HTML test plus build/lint passed (verified raw log `/tmp/dionlabs-burn-pbot.log`). That receipt is suite-level; it does not certify every expected outcome above. Specific newly added cases must record their test names/counts in the burn ledger. Full multi-minute suites use the portfolio resource wrapper.

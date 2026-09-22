@@ -3,6 +3,7 @@
 ## 0.1.1 — 2026-09-22
 
 - Serialize detached start/status/stop operations, reserve launches before a worker PID exists, and recover failed or abandoned startup without allowing duplicate jobs.
+- Verify the detached runner launch token before signalling a saved PID, and retain ownership if failed-start cleanup cannot be confirmed.
 - Reject untrusted browser origins and non-loopback Host headers before local API actions, including bodyless requests.
 - Add synthetic concurrency, startup recovery, HTTP preflight and screenshot privacy coverage; publish a stable risk-based QA registry.
 

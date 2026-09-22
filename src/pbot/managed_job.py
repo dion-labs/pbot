@@ -49,6 +49,24 @@ def process_alive(pid: int | None) -> bool:
     return True
 
 
+def process_matches_job(pid: int, job_id: str) -> bool:
+    """Require the random launch token in the runner command, not just a PID."""
+    if not process_alive(pid):
+        return False
+    result = subprocess.run(
+        ["ps", "-ww", "-p", str(pid), "-o", "command="],
+        check=False, capture_output=True, text=True,
+    )
+    # ps prints argv rather than shell-escaped source. Worker arguments may
+    # contain unmatched quote characters; inspect only our fixed token fields.
+    arguments = result.stdout.split()
+    token = ["-m", "pbot.managed_job_runner", "--job-id", job_id]
+    return result.returncode == 0 and any(
+        arguments[index:index + len(token)] == token
+        for index in range(len(arguments))
+    )
+
+
 def serialized_lifecycle(method):
     """Serialize controller actions across processes, including the spawn gap."""
     @wraps(method)
@@ -94,8 +112,14 @@ class ManagedJobState:
     def create(self, command: list[str], log_path: Path) -> dict[str, object]:
         with self._locked():
             current = self._read_unlocked()
-            if current and current.get("status") in ACTIVE_STATUSES and process_alive(int(current.get("pid") or current.get("launcher_pid") or 0)):
-                raise RuntimeError(f"Managed pbot job {current['id']} is already {current['status']}")
+            if current and current.get("status") in ACTIVE_STATUSES:
+                pid = int(current.get("pid") or 0)
+                owned = (
+                    process_matches_job(pid, str(current["id"])) if pid
+                    else process_alive(int(current.get("launcher_pid") or 0))
+                )
+                if owned:
+                    raise RuntimeError(f"Managed pbot job {current['id']} is already {current['status']}")
             now = utc_now()
             payload: dict[str, object] = {
                 "id": uuid.uuid4().hex[:12],
@@ -143,6 +167,7 @@ class ManagedQueueController:
         if canonical_log != log_path:
             payload = self.state.update(job_id, log_path=str(canonical_log))
             log_path = canonical_log
+        process = None
         try:
             log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -173,6 +198,25 @@ class ManagedQueueController:
                 )
             payload = self.state.update(job_id, pid=process.pid)
         except Exception as exc:
+            if process is not None:
+                try:
+                    # Popen created a new session. Never release its reservation
+                    # while that session might still execute a device command.
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait(timeout=3)
+                except (OSError, subprocess.TimeoutExpired):
+                    # Keep ownership active if termination cannot be confirmed.
+                    # The runner also publishes its own PID independently.
+                    self.state.update(
+                        job_id,
+                        pid=process.pid,
+                        status="running",
+                        message="Startup failed; worker cleanup unconfirmed; stop required",
+                    )
+                    raise
             self.state.update(
                 job_id,
                 status="failed",
@@ -193,27 +237,33 @@ class ManagedQueueController:
         return self._status_unlocked()
 
     def _status_unlocked(self) -> dict[str, object] | None:
-        payload = self.state.read()
-        if not payload:
-            return None
-        status = str(payload.get("status"))
-        pid = int(payload.get("pid") or payload.get("launcher_pid") or 0)
-        if status in ACTIVE_STATUSES and not process_alive(pid):
-            recovery = self.store.recover_interrupted_work()
-            payload = self.state.update(
-                str(payload["id"]),
-                status="failed",
-                finished_at=utc_now(),
-                message="Managed worker disappeared before recording a terminal status",
-                recovery=recovery,
-            )
-            self.store.add_event(
-                "job.failed",
-                f"Detached queue job {payload['id']} disappeared; queue state recovered",
-                "error",
-                {"job_id": payload["id"], **recovery},
-            )
-        return payload
+        # The runner writes terminal state under this same lock before exiting.
+        with self.state._locked():
+            payload = self.state._read_unlocked()
+            if not payload:
+                return None
+            status = str(payload.get("status"))
+            pid = int(payload.get("pid") or 0)
+            owned = (
+                process_matches_job(pid, str(payload["id"])) if pid
+                else process_alive(int(payload.get("launcher_pid") or 0))
+            ) if status in ACTIVE_STATUSES else False
+            if status in ACTIVE_STATUSES and not owned:
+                recovery = self.store.recover_interrupted_work()
+                payload.update(
+                    status="failed",
+                    finished_at=utc_now(),
+                    message="Managed worker disappeared before recording a terminal status",
+                    recovery=recovery,
+                )
+                self.state._write_unlocked(payload)
+                self.store.add_event(
+                    "job.failed",
+                    f"Detached queue job {payload['id']} disappeared; queue state recovered",
+                    "error",
+                    {"job_id": payload["id"], **recovery},
+                )
+            return payload
 
     @serialized_lifecycle
     def stop(self) -> dict[str, object]:
@@ -225,13 +275,16 @@ class ManagedQueueController:
         job_id = str(payload["id"])
         pid = int(payload.get("pid") or 0)
         self.state.update(job_id, status="stopping", message="Stop requested")
-        if process_alive(pid):
-            os.killpg(pid, signal.SIGTERM)
-            deadline = time.monotonic() + 3
-            while process_alive(pid) and time.monotonic() < deadline:
-                time.sleep(0.05)
-            if process_alive(pid):
-                os.killpg(pid, signal.SIGKILL)
+        if process_matches_job(pid, job_id):
+            try:
+                os.killpg(pid, signal.SIGTERM)
+                deadline = time.monotonic() + 3
+                while process_matches_job(pid, job_id) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                if process_matches_job(pid, job_id):
+                    os.killpg(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         recovery = self.store.recover_interrupted_work()
         payload = self.state.update(
             job_id,

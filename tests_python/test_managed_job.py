@@ -12,6 +12,7 @@ def test_managed_job_state_rejects_a_live_duplicate(tmp_path: Path, monkeypatch:
     first = state.create(["python", "worker.py"], tmp_path / "worker.log")
     state.update(str(first["id"]), pid=1234, status="running")
     monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: pid == 1234)
+    monkeypatch.setattr("pbot.managed_job.process_matches_job", lambda pid, job_id: pid == 1234)
 
     with pytest.raises(RuntimeError, match="already running"):
         state.create(["python", "other.py"], tmp_path / "other.log")
@@ -140,3 +141,82 @@ def test_log_tail_handles_absence_and_bounds(tmp_path: Path) -> None:
     log.write_text("\n".join(str(i) for i in range(700)))
     assert controller.log_tail(10000) == [str(i) for i in range(200, 700)]
     assert controller.log_tail(0) == ["699"]
+
+
+@pytest.mark.parametrize("cleanup_fails", [False, True])
+def test_pid_publication_failure_cannot_leave_replaceable_live_worker(tmp_path: Path, monkeypatch, cleanup_fails):
+    import signal
+
+    controller = ManagedQueueController(tmp_path, tmp_path / "db.sqlite3", tmp_path / "var")
+    alive = set()
+    killed = []
+    class FakeProcess:
+        pid = 987654
+        def wait(self, timeout):
+            assert self.pid not in alive
+            return -signal.SIGKILL
+    def spawn(*args, **kwargs):
+        alive.add(FakeProcess.pid)
+        return FakeProcess()
+    def kill_group(pid, sig):
+        assert pid == FakeProcess.pid
+        assert sig == signal.SIGKILL
+        if cleanup_fails:
+            raise PermissionError("synthetic cleanup failure")
+        killed.append(pid)
+        alive.remove(pid)
+    monkeypatch.setattr("pbot.managed_job.subprocess.Popen", spawn)
+    monkeypatch.setattr("pbot.managed_job.os.killpg", kill_group)
+    monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: pid in alive)
+    monkeypatch.setattr("pbot.managed_job.process_matches_job", lambda pid, job_id: pid in alive)
+    update = controller.state.update
+    failed_once = False
+    def fail_first_pid(job_id, **changes):
+        nonlocal failed_once
+        if "pid" in changes and not failed_once:
+            failed_once = True
+            raise OSError("synthetic PID publication failure")
+        return update(job_id, **changes)
+    monkeypatch.setattr(controller.state, "update", fail_first_pid)
+    with pytest.raises(OSError):
+        controller.start(["synthetic-worker"])
+    if cleanup_fails:
+        assert controller.state.read()["status"] == "running"
+        with pytest.raises(RuntimeError, match="already"):
+            controller.start(["second-worker"])
+        assert alive == {FakeProcess.pid}
+    else:
+        assert controller.state.read()["status"] == "failed"
+        assert not alive
+        assert killed == [FakeProcess.pid]
+        controller.state.create(["replacement"], tmp_path / "replacement.log")
+
+
+
+def test_reused_pid_is_never_signalled(tmp_path: Path, monkeypatch):
+    controller = ManagedQueueController(tmp_path, tmp_path / "db.sqlite3", tmp_path / "var")
+    job = controller.state.create(["synthetic-worker"], tmp_path / "worker.log")
+    controller.state.update(job["id"], status="running", pid=987654)
+    monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: True)
+    from types import SimpleNamespace
+    monkeypatch.setattr("pbot.managed_job.subprocess.run", lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="unrelated application --job-id other"))
+    def forbidden_signal(*args):
+        raise AssertionError("Unrelated reused PID must not be signalled")
+    monkeypatch.setattr("pbot.managed_job.os.killpg", forbidden_signal)
+    assert controller.stop()["status"] == "failed"
+    assert controller.state.create(["replacement"], tmp_path / "replacement.log")["id"] != job["id"]
+
+
+@pytest.mark.parametrize("command,expected", [
+    ("python -m pbot.managed_job_runner --job-id synthetic123 -- other", True),
+    ('python -m pbot.managed_job_runner --job-id synthetic123 -- print("', True),
+    ("python -m pbot.managed_job_runner --job-id synthetic1234 -- other", False),
+    ("python -m unrelated --job-id synthetic123", False),
+    ('broken "command', False),
+])
+def test_runner_identity_requires_exact_launch_token(monkeypatch, command, expected):
+    from types import SimpleNamespace
+    from pbot.managed_job import process_matches_job
+    monkeypatch.setattr("pbot.managed_job.process_alive", lambda pid: True)
+    monkeypatch.setattr("pbot.managed_job.subprocess.run", lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout=command))
+    assert process_matches_job(987654, "synthetic123") is expected
