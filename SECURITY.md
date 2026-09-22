@@ -19,3 +19,5 @@ pbot is designed to run locally on a machine and Android device you control:
 - Optional future model or research providers may receive structured observations or screenshots only when explicitly configured. Review their data policy before enabling them.
 
 pbot does not bypass game protections. Using automation can still violate a service's rules or terms and can risk the associated account.
+
+The control API also rejects non-loopback Host headers and browser origins outside the local dashboard allowlist (localhost/127.0.0.1 ports 3000 and 3001). Requests without an Origin remain available to local command-line clients; these checks do not provide authentication against other local processes.

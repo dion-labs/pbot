@@ -54,6 +54,8 @@ The spending lock is a policy guard implemented by pbot, not an Android security
 
 ## Install
 
+[Download the v0.1.1 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.1), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
+
 Install the Xcode Command Line Tools, Node.js, `uv`, and Android Platform Tools first. Then:
 
 ```bash
@@ -134,7 +136,7 @@ npm test
 
 ## Project status
 
-pbot is experimental software under active development. Version `0.1.0` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
+pbot is experimental software under active development. Version `0.1.1` documents the first public reference workflow: it is real, durable, and guarded on the verified setup, but game UI changes can break visual automation without warning. Unsupported states intentionally stop with evidence instead of guessing.
 
 See the [changelog](CHANGELOG.md), [contributing guide](CONTRIBUTING.md), [security policy](SECURITY.md), and [brand assets](docs/brand/README.md). Questions about adapting a device or layout should begin with the [agent-assisted porting guide](docs/AGENT_PORTING.md).
 

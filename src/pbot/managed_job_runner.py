@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 from pathlib import Path
 
@@ -26,6 +27,7 @@ def main() -> None:
     state.update(
         args.job_id,
         status="running",
+        pid=os.getpid(),
         started_at=utc_now(),
         message="Detached queue worker is running",
     )

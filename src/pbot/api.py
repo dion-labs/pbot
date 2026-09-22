@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import sys
+from urllib.parse import urlsplit
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from .config import Settings
+from .config import Settings, _loopback_host
 from .device import AdbDeviceAdapter, DeviceError
 from .engine import Harness
 from .managed_job import ACTIVE_STATUSES, ManagedQueueController
@@ -52,14 +53,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     harness.initialize()
     controller = ManagedQueueController(settings.project_root, settings.database_path, settings.data_dir)
 
-    app = FastAPI(title="pbot control API", version="0.1.0")
+    app = FastAPI(title="pbot control API", version="0.1.1")
     app.state.harness = harness
+    dashboard_origins = ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"],
+        allow_origins=dashboard_origins,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def require_local_request(request: Request, call_next):
+        # Binding loopback alone does not prevent browser cross-origin writes or
+        # DNS rebinding. Reject before any endpoint can observe or mutate state.
+        hosts = request.headers.getlist("host")
+        try:
+            if len(hosts) != 1:
+                raise ValueError("Exactly one Host is required")
+            parsed = urlsplit("//" + hosts[0])
+            if parsed.netloc != hosts[0] or parsed.username is not None or parsed.password is not None:
+                raise ValueError("Invalid Host")
+            _loopback_host(parsed.hostname or "")
+            _ = parsed.port  # Validate a supplied port before accepting the host.
+        except ValueError:
+            return JSONResponse({"detail": "A loopback Host is required"}, status_code=400)
+        origins = request.headers.getlist("origin")
+        if origins and (len(origins) != 1 or origins[0] not in dashboard_origins):
+            return JSONResponse({"detail": "Browser origin is not allowed"}, status_code=403)
+        return await call_next(request)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

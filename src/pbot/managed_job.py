@@ -10,6 +10,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Iterator
 
@@ -48,6 +49,18 @@ def process_alive(pid: int | None) -> bool:
     return True
 
 
+def serialized_lifecycle(method):
+    """Serialize controller actions across processes, including the spawn gap."""
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        path = self.data_dir / "managed-queue-lifecycle.lock"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a+", encoding="utf-8") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+            return method(self, *args, **kwargs)
+    return wrapped
+
+
 class ManagedJobState:
     """Atomic JSON state for the single detached pbot queue worker."""
 
@@ -81,13 +94,14 @@ class ManagedJobState:
     def create(self, command: list[str], log_path: Path) -> dict[str, object]:
         with self._locked():
             current = self._read_unlocked()
-            if current and current.get("status") in ACTIVE_STATUSES and process_alive(int(current.get("pid") or 0)):
+            if current and current.get("status") in ACTIVE_STATUSES and process_alive(int(current.get("pid") or current.get("launcher_pid") or 0)):
                 raise RuntimeError(f"Managed pbot job {current['id']} is already {current['status']}")
             now = utc_now()
             payload: dict[str, object] = {
                 "id": uuid.uuid4().hex[:12],
                 "status": "starting",
                 "pid": None,
+                "launcher_pid": os.getpid(),
                 "command": command,
                 "log_path": str(log_path),
                 "created_at": now,
@@ -118,6 +132,7 @@ class ManagedQueueController:
         self.store = Store(database_path)
         self.store.initialize()
 
+    @serialized_lifecycle
     def start(self, queue_command: list[str]) -> dict[str, object]:
         job_id = uuid.uuid4().hex[:12]
         log_path = self.data_dir / "jobs" / f"queue-{job_id}.log"
@@ -128,34 +143,43 @@ class ManagedQueueController:
         if canonical_log != log_path:
             payload = self.state.update(job_id, log_path=str(canonical_log))
             log_path = canonical_log
-        log_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
 
-        runner = [
-            sys.executable,
-            "-m",
-            "pbot.managed_job_runner",
-            "--job-id",
-            job_id,
-            "--project-root",
-            str(self.project_root),
-            "--database",
-            str(self.database_path),
-            "--data-dir",
-            str(self.data_dir),
-            "--",
-            *queue_command,
-        ]
-        with log_path.open("ab", buffering=0) as log:
-            process = subprocess.Popen(
-                runner,
-                cwd=self.project_root,
-                stdin=subprocess.DEVNULL,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-                close_fds=True,
+            runner = [
+                sys.executable,
+                "-m",
+                "pbot.managed_job_runner",
+                "--job-id",
+                job_id,
+                "--project-root",
+                str(self.project_root),
+                "--database",
+                str(self.database_path),
+                "--data-dir",
+                str(self.data_dir),
+                "--",
+                *queue_command,
+            ]
+            with log_path.open("ab", buffering=0) as log:
+                process = subprocess.Popen(
+                    runner,
+                    cwd=self.project_root,
+                    stdin=subprocess.DEVNULL,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    start_new_session=True,
+                    close_fds=True,
+                )
+            payload = self.state.update(job_id, pid=process.pid)
+        except Exception as exc:
+            self.state.update(
+                job_id,
+                status="failed",
+                finished_at=utc_now(),
+                message=f"Could not launch detached worker: {exc}",
             )
-        payload = self.state.update(job_id, pid=process.pid)
+            raise
         self.store.add_event(
             "job.started",
             f"Detached queue job {job_id} started",
@@ -164,13 +188,17 @@ class ManagedQueueController:
         )
         return payload
 
+    @serialized_lifecycle
     def status(self) -> dict[str, object] | None:
+        return self._status_unlocked()
+
+    def _status_unlocked(self) -> dict[str, object] | None:
         payload = self.state.read()
         if not payload:
             return None
         status = str(payload.get("status"))
-        pid = int(payload.get("pid") or 0)
-        if status in ACTIVE_STATUSES and pid and not process_alive(pid):
+        pid = int(payload.get("pid") or payload.get("launcher_pid") or 0)
+        if status in ACTIVE_STATUSES and not process_alive(pid):
             recovery = self.store.recover_interrupted_work()
             payload = self.state.update(
                 str(payload["id"]),
@@ -187,8 +215,9 @@ class ManagedQueueController:
             )
         return payload
 
+    @serialized_lifecycle
     def stop(self) -> dict[str, object]:
-        payload = self.status()
+        payload = self._status_unlocked()
         if not payload:
             raise RuntimeError("No managed pbot job exists")
         if payload.get("status") not in ACTIVE_STATUSES:
