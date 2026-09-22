@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 — 2026-09-22
+
+- Update the development/build dependency graph to patched pytest, sharp, Browserslist, baseline-browser-mapping and fflate releases. Cloudflare build tooling moves to compatible pinned versions that include patched sharp.
+- Frozen Python and npm dependency audits report no known vulnerabilities at validation time; build, rendered HTML and all 149 Python tests pass.
+
 ## 0.1.1 — 2026-09-22
 
 - Serialize detached start/status/stop operations, reserve launches before a worker PID exists, and recover failed or abandoned startup without allowing duplicate jobs.

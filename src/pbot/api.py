@@ -53,7 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     harness.initialize()
     controller = ManagedQueueController(settings.project_root, settings.database_path, settings.data_dir)
 
-    app = FastAPI(title="pbot control API", version="0.1.1")
+    app = FastAPI(title="pbot control API", version="0.1.2")
     app.state.harness = harness
     dashboard_origins = ["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
     app.add_middleware(
