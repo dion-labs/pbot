@@ -50,7 +50,7 @@ class AutonomousFirstWinRunner:
         allowed = set(self.difficulties)
         return [
             battle
-            for battle in self.store.pending_battles(limit=500)
+            for battle in self.store.pending_battles(limit=None)
             if str(battle["difficulty"]) in allowed
         ]
 

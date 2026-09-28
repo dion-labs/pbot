@@ -170,3 +170,9 @@ Experimental release https://github.com/dion-labs/pbot/releases/tag/v0.1.5 at `a
 Fresh exact archive: frozen installs, lint/build/render,177 Python tests,17/17 Chrome153.0.8010.54 cases, zero forbidden API dispatch/external page requests, cleanup verified-empty/no uncertain identities. Fresh npm/Python audits: no known vulnerabilities. Four-way version agreement0.1.5. Exact-head CI35705971649 success verified live. Durable raw receipts/traces/screenshots: portfolio `qa/token-burn-2026-09-28/pbot/evidence/`; original browser report `pbot-browser-acceptance-y6otz98b`. Source manifest116files excludes runtime/journal/private environment/symlinks; bounded credential-signature audit passed. Prior releases preserved.
 
 Remaining physical/account/browser/platform gates remain as listed above; local Chrome proof does not certify them. No real account/device/ADB/gameplay/live-session changes or website deployment. README already links this now-published release; site owners receive verified links.
+
+## Sep28 complete-queue correctness milestone — v0.1.6 candidate
+
+A fictional501-row Store reproduced false autonomous completion:500Beginner rows filled the display page, hiding one unfinishedExpert row despite an Expert-only objective. Two scheduler regressions reproduced false exhaustion behind other difficulties or500deferred same-scope rows. All three new assertions failed before the fix (`pbot-scope-red.log` in the durable Sep28 QA evidence directory).
+
+Internal autonomous/scheduler checks now request the complete pending list explicitly; default100 and numeric maximum500 remain unchanged for dashboard callers. Retry/action budgets and device behavior are unchanged.23affected storage/autonomous/scheduler tests pass; PB-048 records the regression. Full/archive/CI and root review remain pending before v0.1.6 publication. No real adapter or account was used.

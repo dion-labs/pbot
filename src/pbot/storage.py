@@ -1190,7 +1190,12 @@ class Store:
                 )
         return len(battles)
 
-    def pending_battles(self, limit: int = 100) -> list[dict[str, object]]:
+    def pending_battles(self, limit: int | None = 100) -> list[dict[str, object]]:
+        """List incomplete battles; internal completion checks use None for all rows.
+
+        Numeric limits remain capped for dashboard callers. A display page must
+        never be used as evidence that the whole orchestration scope is empty.
+        """
         with self.connect() as connection:
             rows = connection.execute(
                 """SELECT b.id, b.expansion, b.difficulty, b.name,
@@ -1205,7 +1210,7 @@ class Store:
                               WHEN 'Advanced' THEN 3 WHEN 'Expert' THEN 4 ELSE 5 END,
                             b.expansion, b.name
                    LIMIT ?""",
-                (max(1, min(limit, 500)),),
+                (-1 if limit is None else max(1, min(limit, 500)),),
             ).fetchall()
         return [dict(row) for row in rows]
 

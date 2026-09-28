@@ -298,3 +298,26 @@ def test_recipe_build_blocker_is_durable_needs_attention(tmp_path: Path) -> None
     assert result["build_blocker"]["message"] == "all deck slots are occupied"
     assert store.latest_run_objective()["checkpoint"]["phase"] == "build_deck"
     assert store.get_state()["status"] == "needs_attention"
+
+
+def test_completion_sees_requested_work_beyond_dashboard_limit(tmp_path: Path) -> None:
+    store = Store(tmp_path / "fixture.sqlite3")
+    store.initialize()
+    store.import_battles([{
+        "id": f"fictional:{i}", "expansion": "Synthetic",
+        "difficulty": "Beginner" if i < 500 else "Expert",
+        "name": f"Fictional {i:04}", "first_win": False,
+        "missions_complete": 0, "missions_total": 1, "evidence_path": None,
+    } for i in range(501)])
+
+    class DisconnectedWorker:
+        def run(self, _limit):
+            raise DeviceError("Fictional device disconnected")
+
+    runner = AutonomousFirstWinRunner(
+        store, lambda *_: DisconnectedWorker(), ("Expert",), lambda *_: None,
+    )
+    assert runner.run()["status"] == "needs_attention"
+    assert store.latest_run_objective()["status"] == "needs_attention"
+    assert len(store.pending_battles()) == 100
+    assert len(store.pending_battles(limit=9999)) == 500

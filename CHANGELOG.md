@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6 — 2026-09-28
+
+- Check the complete pending queue before declaring an autonomous objective complete or a scheduler exhausted. Work beyond the 500-row dashboard cap remains visible to orchestration, including selected difficulties and queued work after deferred rows.
+- Preserve dashboard listing limits and existing retry/action safety budgets.
+
 ## 0.1.5 — 2026-09-22
 
 - Show actionable command errors and allow retry without unhandled browser exceptions.

@@ -77,3 +77,20 @@ def test_continuous_scheduler_fails_if_a_round_makes_no_progress(tmp_path: Path)
 
     with pytest.raises(RuntimeError, match="made no progress"):
         scheduler.run()
+
+
+@pytest.mark.parametrize("hidden_by", ["other_difficulty", "deferred"])
+def test_scheduler_does_not_exhaust_hidden_queued_work(tmp_path: Path, hidden_by: str) -> None:
+    store = Store(tmp_path / "fixture.sqlite3")
+    store.initialize()
+    definitions = [{
+        **battle("Synthetic"), "id": f"fictional:{i}", "name": f"Fictional {i:04}",
+        "difficulty": "Beginner" if hidden_by == "other_difficulty" and i < 500 else "Intermediate",
+    } for i in range(501)]
+    store.import_battles(definitions)
+    if hidden_by == "deferred":
+        for item in definitions[:500]:
+            store.resolve_battle_work(str(item["id"]), "deferred", "Fictional bounded handoff")
+    scheduler = ContinuousScheduler(store, StalledWorker(), ("Intermediate",), 1, lambda *_: None)
+    with pytest.raises(RuntimeError, match="made no progress"):
+        scheduler.run()

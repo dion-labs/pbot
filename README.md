@@ -54,7 +54,7 @@ The spending lock is a policy guard implemented by pbot, not an Android security
 
 ## Install
 
-[Download the v0.1.5 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.5), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
+[Download the v0.1.6 source release](https://github.com/dion-labs/pbot/releases/tag/v0.1.6), extract it, and run the following commands from its project directory. Release assets include a SHA-256 checksum file.
 
 Install the Xcode Command Line Tools, Node.js, `uv`, and Android Platform Tools first. Then:
 

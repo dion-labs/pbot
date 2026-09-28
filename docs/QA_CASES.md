@@ -82,3 +82,9 @@ Run synthetic Python coverage with `uv run pytest`; dashboard smoke/build with `
 Baseline: 2026-09-22 at ae11413a1ef396a916fd1b2b9e0c810d1f9a8aae, 108 Python tests and one rendered HTML test plus build/lint passed (verified raw log `/tmp/dionlabs-burn-pbot.log`). That receipt is suite-level; it does not certify every expected outcome above. Specific newly added cases must record their test names/counts in the burn ledger. Full multi-minute suites use the portfolio resource wrapper.
 
 Post-burn acceptance: PB-004/008/029/033–036 need D-coordinated disposable device/account access; PB-012/031/041 have synthetic Chrome acceptance, with physical mobile/other engines/assistive technology separate; PB-025 has an authorized disposable OS harness; see its dated platform-specific receipt; PB-037/042 need exact final artifact review; PB-038 has actual Chrome Origin and owned HTTP Host acceptance; PB-039–040 now have isolated HTTP coverage. None authorizes spending, crafting, gameplay changes on D's account, runtime cleanup, or emulator/session restarts.
+
+## Complete orchestration scope
+
+| ID | Priority / class | Procedure | Expected result | Mapping |
+|---|---|---|---|---|
+| PB-048 | P1 correctness/recovery | Place requested work beyond 500 other-difficulty or deferred rows | Runner never falsely completes and scheduler never falsely exhausts; dashboard retains bounded listings | test_completion_sees_requested_work_beyond_dashboard_limit; test_scheduler_does_not_exhaust_hidden_queued_work |

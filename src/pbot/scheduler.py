@@ -35,7 +35,7 @@ class ContinuousScheduler:
     def eligible(self) -> list[dict[str, object]]:
         return [
             item
-            for item in self.store.pending_battles(limit=500)
+            for item in self.store.pending_battles(limit=None)
             if item["difficulty"] in self.difficulties and item["work_state"] == "queued"
         ]
 
