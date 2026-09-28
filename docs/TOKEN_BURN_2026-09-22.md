@@ -178,3 +178,15 @@ A fictional501-row Store reproduced false autonomous completion:500Beginner rows
 Internal autonomous/scheduler checks now request the complete pending list explicitly; default100 and numeric maximum500 remain unchanged for dashboard callers. Retry/action budgets and device behavior are unchanged.23affected storage/autonomous/scheduler tests pass; PB-048 records the regression. Full/archive/CI and root review remain pending before v0.1.6 publication. No real adapter or account was used.
 
 Caller audit reproduced the same cap in first-pass target selection (fourth red regression). That selector also opts into all rows;27affected tests now pass. Root rereview requested for this one-line caller correction. Cancelled only two owned still-queued validation wrappers after verifying PID/start/parent and absence of children; exact final archive will cover the complete change.
+
+## v0.1.6 published and downloaded-verified — 2026-09-28
+
+Experimental release: https://github.com/dion-labs/pbot/releases/tag/v0.1.6
+Source revision: `702bf24a0e13327875762c665ee949b6dc428a4e`.
+Source: https://github.com/dion-labs/pbot/releases/download/v0.1.6/pbot-0.1.6.tar.gz
+Checksums: https://github.com/dion-labs/pbot/releases/download/v0.1.6/SHA256SUMS
+Downloaded bytes match the validated archive and published checksum: `583f988fe10fd17e6a8b5a267b7a61a0424875a04c86e32227c378a78a1fba7a`.
+
+Exact clean archive passed frozen installs, lint/build/render and **181 Python tests**. Four-way package version agreement is 0.1.6. Four synthetic regressions reproduced the queue cap bugs before the fix; 27 affected tests passed afterward. Root independently reviewed the original three files and final first-pass caller, running the relevant tests. Exact-head CI verify and secrets passed: https://github.com/dion-labs/pbot/actions/runs/36466738582 . Release notes were retrieved and compared with the validated text. Existing releases remain immutable.
+
+The unchanged UI retains today's 17-case isolated Chrome acceptance; unchanged process lifecycle retains the September 22 13-case macOS receipt. Dependency versions are unchanged and today's npm/Python audits found no known vulnerabilities. Physical/device/account/other-browser gates remain explicitly unrun. Source manifest excludes private runtime/environment/journal and symlinks. No ADB, real gameplay, account mutation, live-session restart or site deployment occurred.
