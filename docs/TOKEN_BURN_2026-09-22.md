@@ -162,3 +162,11 @@ Corrected final candidate: **17/17 actual Chrome cases passed**, no unhandled br
 Final source packaging now includes an explicit launcher hash in its report and archive-compatible source selection. Prepared metadata/download link for v0.1.5; prior v0.1.4 remains immutable. Next: validate exact committed archive (full build/render/Python/lint plus 17 browser cases), CI, publication and downloaded checksum. Unchanged 13-case OS lifecycle acceptance from v0.1.4 is reused; it is not being rerun to imply broader platform coverage.
 
 Remaining gates: physical Android/owned-deck read-back and unrelated-slot preservation; USB/RSA/reconnect/unsupported layouts; physical pause/handoff/awake restore and secure unlock; same-device account-switch rescanning; other browser engines, physical mobile browsers, native zoom and assistive technology; other kernels/escaped process sessions. The synthetic local Chrome gate is now distinct from these remaining checks.
+
+## v0.1.5 published and verified — 2026-09-28
+
+Experimental release https://github.com/dion-labs/pbot/releases/tag/v0.1.5 at `a855db65c1c91b50d2a100e73243853920e0e28a`. Source https://github.com/dion-labs/pbot/releases/download/v0.1.5/pbot-0.1.5.tar.gz and https://github.com/dion-labs/pbot/releases/download/v0.1.5/SHA256SUMS downloaded and byte-compared successfully. SHA256 `ea9bfe6ec8ffbdf323ac9e07a44af7a405af4e4cec9f4b76e73410898a02de65`.
+
+Fresh exact archive: frozen installs, lint/build/render,177 Python tests,17/17 Chrome153.0.8010.54 cases, zero forbidden API dispatch/external page requests, cleanup verified-empty/no uncertain identities. Fresh npm/Python audits: no known vulnerabilities. Four-way version agreement0.1.5. Exact-head CI35705971649 success verified live. Durable raw receipts/traces/screenshots: portfolio `qa/token-burn-2026-09-28/pbot/evidence/`; original browser report `pbot-browser-acceptance-y6otz98b`. Source manifest116files excludes runtime/journal/private environment/symlinks; bounded credential-signature audit passed. Prior releases preserved.
+
+Remaining physical/account/browser/platform gates remain as listed above; local Chrome proof does not certify them. No real account/device/ADB/gameplay/live-session changes or website deployment. README already links this now-published release; site owners receive verified links.
