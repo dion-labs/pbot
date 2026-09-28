@@ -70,3 +70,22 @@ def test_prepare_battle_switches_from_persisted_deck_to_requested_owned_deck() -
     pilot.prepare_battle(target)
 
     assert pilot.device.selected == "pbotfire"
+
+
+def test_queued_target_sees_requested_scope_beyond_display_cap(tmp_path: Path) -> None:
+    from pbot.storage import Store
+
+    store = Store(tmp_path / "fixture.sqlite3")
+    store.initialize()
+    store.import_battles([{
+        "id": f"fictional:{i}", "expansion": "Synthetic",
+        "difficulty": "Beginner" if i < 500 else "Expert",
+        "name": f"Fictional {i:04}", "first_win": False,
+        "missions_complete": 0, "missions_total": 1, "evidence_path": None,
+    } for i in range(501)])
+    # Exercise only database target selection: no Android adapter or discovery.
+    pilot = FirstPassPilot.__new__(FirstPassPilot)
+    pilot.store = store
+    pilot.difficulty = "Expert"
+    pilot.expansion = "Synthetic"
+    assert pilot.queued_target().id == "fictional:500"

@@ -87,4 +87,4 @@ Post-burn acceptance: PB-004/008/029/033–036 need D-coordinated disposable dev
 
 | ID | Priority / class | Procedure | Expected result | Mapping |
 |---|---|---|---|---|
-| PB-048 | P1 correctness/recovery | Place requested work beyond 500 other-difficulty or deferred rows | Runner never falsely completes and scheduler never falsely exhausts; dashboard retains bounded listings | test_completion_sees_requested_work_beyond_dashboard_limit; test_scheduler_does_not_exhaust_hidden_queued_work |
+| PB-048 | P1 correctness/recovery | Place requested work beyond 500 other-difficulty or deferred rows | Runner never falsely completes and scheduler never falsely exhausts; dashboard retains bounded listings | test_completion_sees_requested_work_beyond_dashboard_limit; test_scheduler_does_not_exhaust_hidden_queued_work; test_queued_target_sees_requested_scope_beyond_display_cap |

@@ -3,6 +3,7 @@
 ## 0.1.6 — 2026-09-28
 
 - Check the complete pending queue before declaring an autonomous objective complete or a scheduler exhausted. Work beyond the 500-row dashboard cap remains visible to orchestration, including selected difficulties and queued work after deferred rows.
+- Select first-pass targets beyond the display cap so orchestration can resolve the requested battle.
 - Preserve dashboard listing limits and existing retry/action safety budgets.
 
 ## 0.1.5 — 2026-09-22

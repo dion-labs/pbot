@@ -190,7 +190,7 @@ class FirstPassPilot:
     def queued_target(self) -> BattleObservation:
         matches = [
             item
-            for item in self.store.pending_battles(limit=500)
+            for item in self.store.pending_battles(limit=None)
             if item["difficulty"] == self.difficulty and item["expansion"] == self.expansion
         ]
         if not matches:
